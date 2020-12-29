@@ -1,4 +1,4 @@
 (sym_lib_table
   (lib (name JNTUB-rescue)(type Legacy)(uri ${KIPRJMOD}/JNTUB-rescue.lib)(options "")(descr ""))
-  (lib (name SDIY)(type Legacy)(uri /Users/Ben/Documents/Kicad/Libraries/SDIY.lib)(options "")(descr ""))
+  (lib (name SDIY)(type Legacy)(uri ${KIPRJMOD}/Libraries/SDIY.lib)(options "")(descr ""))
 )
