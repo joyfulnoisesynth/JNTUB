@@ -1,0 +1,643 @@
+Cmp-Mod V01 Created by PcbNew   date = Tuesday, December 29, 2020 at 12:28:59 AM
+
+BeginCmp
+TimeStamp = 5FEC433A
+Path = /5FE97452/5FEC8D65
+Reference = U3;
+ValeurCmp = 78L05;
+IdModule  = TO_SOT_Packages_THT:TO-92_Inline_Wide;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEC3604
+Path = /5FE97452/5FECA9B0
+Reference = U4;
+ValeurCmp = 79L05;
+IdModule  = TO_SOT_Packages_THT:TO-92_Inline_Wide;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEAA7F2
+Path = /5FE97452/5FEB6ADE
+Reference = C12;
+ValeurCmp = 680p;
+IdModule  = Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEBF702
+Path = /5FE97452/5FED4C11
+Reference = D5;
+ValeurCmp = 1N4148;
+IdModule  = SDIY:D_DO-35_SOD27_P6.85mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEAA84E
+Path = /5FE97452/5FE9CC14
+Reference = D4;
+ValeurCmp = BAT81;
+IdModule  = SDIY:D_DO-35_SOD27_P6.85mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEAA836
+Path = /5FE97452/5FE9CC0E
+Reference = D3;
+ValeurCmp = BAT81;
+IdModule  = SDIY:D_DO-35_SOD27_P6.85mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEAA81E
+Path = /5FE97452/5FE98D35
+Reference = D2;
+ValeurCmp = BAT81;
+IdModule  = SDIY:D_DO-35_SOD27_P6.85mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEAA806
+Path = /5FE97452/5FE98CF1
+Reference = D1;
+ValeurCmp = BAT81;
+IdModule  = SDIY:D_DO-35_SOD27_P6.85mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEAA652
+Path = /5FE97452/5FEC994C
+Reference = C4;
+ValeurCmp = 0.1u;
+IdModule  = SDIY:C_Disc_D3.0mm_W2.0mm_P2.50mm;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEC05A6
+Path = /5FE97452/5FE97919
+Reference = C10;
+ValeurCmp = 0.1u;
+IdModule  = SDIY:C_Disc_D3.0mm_W2.0mm_P2.50mm;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEADDA3
+Path = /5FE97452/5FEC7062
+Reference = C9;
+ValeurCmp = 0.1u;
+IdModule  = SDIY:C_Disc_D3.0mm_W2.0mm_P2.50mm;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEAA7A2
+Path = /5FE97452/5FEC6FB1
+Reference = C8;
+ValeurCmp = 0.1u;
+IdModule  = SDIY:C_Disc_D3.0mm_W2.0mm_P2.50mm;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEAA6FA
+Path = /5FE97452/5FECC988
+Reference = C6;
+ValeurCmp = 0.1u;
+IdModule  = SDIY:C_Disc_D3.0mm_W2.0mm_P2.50mm;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEBD1BF
+Path = /5FE97452/5FEB78BF
+Reference = TP14;
+ValeurCmp = PWM_FILT;
+IdModule  = SDIY:Test_Point;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEBD1CB
+Path = /5FE97452/5FEB871D
+Reference = TP13;
+ValeurCmp = PWM_RAW;
+IdModule  = SDIY:Test_Point;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEC07F7
+Path = /5FE97452/5FED8849
+Reference = TP12;
+ValeurCmp = OUT;
+IdModule  = SDIY:Test_Point;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEBF814
+Path = /5FE97452/5FEB1E02
+Reference = TP11;
+ValeurCmp = CLK/TRG;
+IdModule  = SDIY:Test_Point;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEBD1EF
+Path = /5FE97452/5FEB2FCE
+Reference = TP10;
+ValeurCmp = TRG_FIN;
+IdModule  = SDIY:Test_Point;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEC07EB
+Path = /5FE97452/5FE9CC62
+Reference = TP9;
+ValeurCmp = P1_SUM;
+IdModule  = SDIY:Test_Point;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEB516C
+Path = /5FE97452/5FE9CC5B
+Reference = TP8;
+ValeurCmp = P1_FIN;
+IdModule  = SDIY:Test_Point;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEC0839
+Path = /5FE97452/5FE9CC49
+Reference = TP7;
+ValeurCmp = P1_CV;
+IdModule  = SDIY:Test_Point;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEC0845
+Path = /5FE97452/5FE9CC40
+Reference = TP6;
+ValeurCmp = P1_POT;
+IdModule  = SDIY:Test_Point;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEC0851
+Path = /5FE97452/5FE9B4EF
+Reference = TP5;
+ValeurCmp = P2_SUM;
+IdModule  = SDIY:Test_Point;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEB515C
+Path = /5FE97452/5FE9B3E1
+Reference = TP4;
+ValeurCmp = P2_FIN;
+IdModule  = SDIY:Test_Point;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEC085D
+Path = /5FE97452/5FE9A9D5
+Reference = TP3;
+ValeurCmp = P2_CV;
+IdModule  = SDIY:Test_Point;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEC0869
+Path = /5FE97452/5FE9A3D1
+Reference = TP2;
+ValeurCmp = P2_POT;
+IdModule  = SDIY:Test_Point;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEB5150
+Path = /5FE97452/5FE9B913
+Reference = TP1;
+ValeurCmp = P3_FIN;
+IdModule  = SDIY:Test_Point;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEC0811
+Path = /5FE97452/5FEB1874
+Reference = R26;
+ValeurCmp = 10k;
+IdModule  = SDIY:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEC0182
+Path = /5FE97452/5FEB566D
+Reference = R25;
+ValeurCmp = 10k;
+IdModule  = SDIY:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEC01B8
+Path = /5FE97452/5FEB58F5
+Reference = R24;
+ValeurCmp = 10k;
+IdModule  = SDIY:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEC014C
+Path = /5FE97452/5FEBBE29
+Reference = R23;
+ValeurCmp = R_led;
+IdModule  = SDIY:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEB50E4
+Path = /5FE97452/5FEB71A8
+Reference = R22;
+ValeurCmp = 47k;
+IdModule  = SDIY:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEC0116
+Path = /5FE97452/5FEB7E04
+Reference = R21;
+ValeurCmp = R_out;
+IdModule  = SDIY:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEBF690
+Path = /5FE97452/5FEA7A38
+Reference = R20;
+ValeurCmp = 47k;
+IdModule  = SDIY:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEBF6C6
+Path = /5FE97452/5FEA9D29
+Reference = R19;
+ValeurCmp = R_led;
+IdModule  = SDIY:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEBF82E
+Path = /5FE97452/5FEA467B
+Reference = R18;
+ValeurCmp = 3.3k;
+IdModule  = SDIY:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEBF864
+Path = /5FE97452/5FE9ED2A
+Reference = R17;
+ValeurCmp = 330k;
+IdModule  = SDIY:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEBF65A
+Path = /5FE97452/5FEA3BF6
+Reference = R16;
+ValeurCmp = 330k;
+IdModule  = SDIY:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEBF624
+Path = /5FE97452/5FE9E8DF
+Reference = R15;
+ValeurCmp = R_out;
+IdModule  = SDIY:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEBF744
+Path = /5FE97452/5FEA5F93
+Reference = R14;
+ValeurCmp = 22k;
+IdModule  = SDIY:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEBF7B3
+Path = /5FE97452/5FEA562E
+Reference = R13;
+ValeurCmp = 33k;
+IdModule  = SDIY:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEC0757
+Path = /5FE97452/5FE9CBC4
+Reference = R12;
+ValeurCmp = 10k;
+IdModule  = SDIY:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEC078D
+Path = /5FE97452/5FE9CBD6
+Reference = R11;
+ValeurCmp = 10k;
+IdModule  = SDIY:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEC5703
+Path = /5FE97452/5FE9CBEE
+Reference = R10;
+ValeurCmp = 10k;
+IdModule  = SDIY:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEC07C3
+Path = /5FE97452/5FE9CBB2
+Reference = R9;
+ValeurCmp = 10k;
+IdModule  = SDIY:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEC56CD
+Path = /5FE97452/5FE9CBF4
+Reference = R8;
+ValeurCmp = 10k;
+IdModule  = SDIY:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEC067F
+Path = /5FE97452/5FE9CBB8
+Reference = R7;
+ValeurCmp = 10k;
+IdModule  = SDIY:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEC06B5
+Path = /5FE97452/5FE9817D
+Reference = R6;
+ValeurCmp = 10k;
+IdModule  = SDIY:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEC06EB
+Path = /5FE97452/5FE982EA
+Reference = R5;
+ValeurCmp = 10k;
+IdModule  = SDIY:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEC5697
+Path = /5FE97452/5FE988B0
+Reference = R4;
+ValeurCmp = 10k;
+IdModule  = SDIY:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEC0649
+Path = /5FE97452/5FE97EFC
+Reference = R3;
+ValeurCmp = 10k;
+IdModule  = SDIY:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEC5739
+Path = /5FE97452/5FE988F6
+Reference = R2;
+ValeurCmp = 10k;
+IdModule  = SDIY:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEC0721
+Path = /5FE97452/5FE97F3F
+Reference = R1;
+ValeurCmp = 10k;
+IdModule  = SDIY:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEB5315
+Path = /5FE97452/611E4E02
+Reference = D11;
+ValeurCmp = 1N5818;
+IdModule  = Diodes_THT:D_DO-41_SOD81_P7.62mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEC28C2
+Path = /5FE97452/611B0D4E
+Reference = D10;
+ValeurCmp = 1N5818;
+IdModule  = Diodes_THT:D_DO-41_SOD81_P7.62mm_Horizontal;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEABDE8
+Path = /5FE97452/5FEC5611
+Reference = C2;
+ValeurCmp = 15u;
+IdModule  = Capacitors_THT:CP_Radial_D6.3mm_P2.50mm;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEAA496
+Path = /5FE97452/5FEC53EC
+Reference = C1;
+ValeurCmp = 15u;
+IdModule  = Capacitors_THT:CP_Radial_D6.3mm_P2.50mm;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FE9B890
+Path = /5FE97452/5FEBDEE3
+Reference = U2;
+ValeurCmp = TL074;
+IdModule  = Housings_DIP:DIP-14_W7.62mm_Socket_LongPads;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEC05F1
+Path = /5FE97452/6020224E
+Reference = U1;
+ValeurCmp = ATtiny85;
+IdModule  = Housings_DIP:DIP-8_W7.62mm_Socket_LongPads;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FE9B821
+Path = /5FE9B0F3/5FE9C832
+Reference = RV3;
+ValeurCmp = B100K;
+IdModule  = SDIY:Potentiometer_Alpha_9mm_WithGround;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FE9B818
+Path = /5FE9B0F3/5FE9C835
+Reference = RV2;
+ValeurCmp = B100K;
+IdModule  = SDIY:Potentiometer_Alpha_9mm_WithGround;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FE9B80F
+Path = /5FE9B0F3/5FE9C839
+Reference = RV1;
+ValeurCmp = B100K;
+IdModule  = SDIY:Potentiometer_Alpha_9mm_WithGround;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FE9B749
+Path = /5FE97452/5FEB5E16
+Reference = JP1;
+ValeurCmp = JMP_GATE_OUT;
+IdModule  = Pin_Headers:Pin_Header_Straight_1x02_Pitch2.54mm;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEBAC92
+Path = /5FE97452/5FE9AC7C
+Reference = J11;
+ValeurCmp = B2_HDR_RIGHT;
+IdModule  = Pin_Headers:Pin_Header_Straight_1x10_Pitch2.54mm;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEBAB89
+Path = /5FE97452/5FE9AC6F
+Reference = J10;
+ValeurCmp = B2_HDR_LEFT;
+IdModule  = Pin_Headers:Pin_Header_Straight_1x10_Pitch2.54mm;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEC47FB
+Path = /5FE97452/5FEC10FA
+Reference = J9;
+ValeurCmp = POWER;
+IdModule  = Pin_Headers:Pin_Header_Straight_2x05_Pitch2.54mm;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FE9B719
+Path = /5FE9B0F3/5FEAD57A
+Reference = J8;
+ValeurCmp = B1_HDR_RIGHT;
+IdModule  = Pin_Headers:Pin_Header_Straight_1x10_Pitch2.54mm;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEA74FE
+Path = /5FE9B0F3/5FEACABB
+Reference = J7;
+ValeurCmp = B1_HDR_LEFT;
+IdModule  = Pin_Headers:Pin_Header_Straight_1x10_Pitch2.54mm;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FE9B6FD
+Path = /5FE9B0F3/5FE9C844
+Reference = J6;
+ValeurCmp = OUT2;
+IdModule  = SDIY:PJ301M-12;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FE9B6F5
+Path = /5FE9B0F3/5FE9C843
+Reference = J5;
+ValeurCmp = OUT1;
+IdModule  = SDIY:PJ301M-12;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FE9B6ED
+Path = /5FE9B0F3/5FE9C83E
+Reference = J4;
+ValeurCmp = DITTO;
+IdModule  = SDIY:PJ301M-12;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FE9B6E5
+Path = /5FE9B0F3/5FE9C83D
+Reference = J3;
+ValeurCmp = CLK/TRG;
+IdModule  = SDIY:PJ301M-12;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FE9B6DD
+Path = /5FE9B0F3/5FE9C83C
+Reference = J2;
+ValeurCmp = PARAM2_CV;
+IdModule  = SDIY:PJ301M-12;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FE9B6D5
+Path = /5FE9B0F3/5FE9C838
+Reference = J1;
+ValeurCmp = PARAM1_CV;
+IdModule  = SDIY:PJ301M-12;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FE9B6CD
+Path = /5FE9B0F3/5FEAB576
+Reference = D8;
+ValeurCmp = OUT_LED-;
+IdModule  = LEDs:LED_D3.0mm;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FE9B6C7
+Path = /5FE9B0F3/5FEAB52B
+Reference = D7;
+ValeurCmp = OUT_LED+;
+IdModule  = LEDs:LED_D3.0mm;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FE9B6C1
+Path = /5FE9B0F3/5FEAACC9
+Reference = D6;
+ValeurCmp = IN_LED;
+IdModule  = LEDs:LED_D3.0mm;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FE9B750
+Path = /5FE97452/5FEA3F6A
+Reference = Q1;
+ValeurCmp = 2N3904;
+IdModule  = TO_SOT_Packages_THT:TO-92_Inline_Wide;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEBF77B
+Path = /5FE97452/5FEA43AD
+Reference = Q2;
+ValeurCmp = 2N3904;
+IdModule  = TO_SOT_Packages_THT:TO-92_Inline_Wide;
+EndCmp
+
+BeginCmp
+TimeStamp = 5FEBF7EA
+Path = /5FE97452/5FEA7FA6
+Reference = Q3;
+ValeurCmp = 2N3904;
+IdModule  = TO_SOT_Packages_THT:TO-92_Inline_Wide;
+EndCmp
+
+EndListe
