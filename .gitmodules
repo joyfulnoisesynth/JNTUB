@@ -1,3 +1,3 @@
 [submodule "Libraries"]
 	path = hardware/Libraries
-	url = git@github.com-joyfulnoisesynth:joyfulnoisesynth/KiCad-Libs.git
+	url = git@github.com:joyfulnoisesynth/KiCad-Libs.git
