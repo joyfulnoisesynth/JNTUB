@@ -39,6 +39,15 @@ namespace Io {
   const uint8_t PIN_GATE   = 0;   // PB0, chip pin 5
   const uint8_t PIN_OUT    = 1;   // PB1/OC1A, chip pin 6
 
+#elif defined (__AVR_ATmega328P__) || defined (__AVR_ATmega328__)
+
+  // I used a regular old Arduino Uno for initial testing.
+  const uint8_t PIN_PARAM1 = A3;  // ADC3, chip pin 26
+  const uint8_t PIN_PARAM2 = A4;  // ADC4, chip pin 27
+  const uint8_t PIN_PARAM3 = A5;  // ADC5, chip pin 28
+  const uint8_t PIN_GATE   = 8;   // PB0, chip pin 14
+  const uint8_t PIN_OUT    = 9;   // PB1/OC1A, chip pin 15
+
 #else
 
   static_assert(false, "Pin mappings not defined for this AVR chip");
