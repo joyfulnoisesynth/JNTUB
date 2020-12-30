@@ -26,6 +26,8 @@
 #ifndef JNTUB_H_
 #define JNTUB_H_
 
+#include <stdint.h>
+
 namespace JNTUB {
   /*
    * All modules based on the JoyfulNoise Tiny Utility Board have the same

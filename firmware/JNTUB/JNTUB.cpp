@@ -68,8 +68,7 @@ uint16_t readParam3()
 }
 bool readGate()
 {
-  // Gate signal is inverted at the chip's input pin.
-  return !digitalRead(PIN_GATE);
+  return digitalRead(PIN_GATE);
 }
 
 void digitalWriteOut(bool value)

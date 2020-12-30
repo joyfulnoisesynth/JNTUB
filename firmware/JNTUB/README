@@ -1,0 +1,12 @@
+JoyfulNoise Tiny Utility Board Firmware Library
+-----------------------------------------------
+
+This is the library that houses common code that can be used by any
+JNTUB-based Eurorack module.
+
+=== USAGE ===
+
+To get this to work with Arduino IDE, you'll need to create a symlink/hardlink
+to the firmware/JNTUB/ directory in your Arduino libraries directory.
+
+See <https://www.arduino.cc/en/hacking/libraries> for details.
