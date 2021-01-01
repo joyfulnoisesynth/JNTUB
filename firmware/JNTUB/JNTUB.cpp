@@ -169,4 +169,51 @@ void setUpFastPWM()
   fastPWMInitialized = true;
 }
 
+/**
+ * ===========================================================================
+ *
+ *                            UTILITY CLASSES
+ *
+ * ===========================================================================
+ */
+
+DiscreteKnob::DiscreteKnob(uint8_t numValues, uint8_t hysteresis)
+{
+  mNumValues = numValues;
+  mHysteresis = hysteresis;
+  mCurVal= 0;
+}
+
+void DiscreteKnob::update(uint16_t value)
+{
+  uint16_t stepSize = 1024 / mNumValues;
+  uint16_t curStep = mCurVal * stepSize;
+
+  // Calculate the values that need to be passed in order to go up/down a value.
+  int nextStepDown, nextStepUp;
+
+  // If current val is 0, can't go down
+  if (mCurVal == 0)
+    nextStepDown = 0;
+  else
+    nextStepDown = curStep - stepSize - mHysteresis;
+  nextStepDown = constrain(nextStepDown, 0, 1023);
+
+  // If current val is numValues-1, can't go up
+  if (mCurVal == mNumValues - 1)
+    nextStepUp = 1024;
+  else
+    nextStepUp = curStep + stepSize + mHysteresis;
+  nextStepUp = constrain(nextStepUp, 0, 1023);
+
+  if (value < nextStepDown || value > nextStepUp) {
+    mCurVal = value / stepSize;
+  }
+}
+
+int DiscreteKnob::getValue() const
+{
+  return mCurVal;
+}
+
 }  //JNTUB

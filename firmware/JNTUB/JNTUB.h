@@ -89,6 +89,45 @@ namespace JNTUB {
   void digitalWriteOut(bool value);
   void analogWriteOut(uint8_t value);
 
+  /*
+   * =======================================================================
+   * UTILITY CLASSES
+   * =======================================================================
+   */
+
+  /**
+   * A knob that selects between a finite number of "categories" or "values"
+   * with built-in hysteresis.
+   *
+   * By "hysteresis" I mean that it does not simply do inputVal / numValues.
+   * Doing so would be susceptible to noise when the input is at or near
+   * one of the "cutoffs".
+   *
+   * Example, with numValues=4 and hysteresis=10:
+   *  - The nominal cutoff from value 0 to value 1 would be 1024/4 = 128.
+   *  - getValue() will not return 1 until value exceeds 138.
+   *  - getValue() will not return 0 again until value goes below 118.
+   */
+  class DiscreteKnob {
+  public:
+    // numValues min: 1
+    //           max: 128
+    // hysteresis min: 0
+    // hysteresis max: (1024 / numValues) / 2
+    DiscreteKnob(uint8_t numValues, uint8_t hysteresis);
+
+    // Call once per loop with the read analog input value.
+    void update(uint16_t value);
+
+    // Retrieve the current discrete value (0 to numValues-1).
+    int getValue() const;
+
+  private:
+    uint8_t mNumValues;
+    uint8_t mHysteresis;
+    uint16_t mCurVal;
+  };
+
 }  //JNTUB
 
 #endif  //JNTUB_H_
