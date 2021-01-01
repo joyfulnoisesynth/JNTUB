@@ -1,12 +1,4 @@
 /*
-  Project:     JoyfulNoise Tiny Utility Board Firmware
-  File:        JNTUB.h
-  Description: JNTUB Common Library Declarations
-
-  Common functionality for all JNTUB-based modules.
-
-  ==============================================================================
-  
   Copyright (C) 2020  Ben Reeves
 
   This program is free software: you can redistribute it and/or modify
@@ -21,6 +13,15 @@
 
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+  ==============================================================================
+
+  Project:     JoyfulNoise Tiny Utility Board Firmware
+  File:        JNTUB.h
+  Description: JNTUB Common Library Declarations
+
+  Common functionality for all JNTUB-based modules.
+
  */
 
 #ifndef JNTUB_H_

@@ -1,10 +1,4 @@
 /*
-  Project:     JoyfulNoise Tiny Utility Board Firmware
-  File:        Test.ino
-  Description: Test sketch for JNTUB library
-
-  ==============================================================================
-
   Copyright (C) 2020  Ben Reeves
 
   This program is free software: you can redistribute it and/or modify
@@ -19,6 +13,13 @@
 
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+  ==============================================================================
+
+  Project:     JoyfulNoise Tiny Utility Board Firmware
+  File:        Test.ino
+  Description: Test sketch for JNTUB library
+
  */
 
 #include <JNTUB.h>
