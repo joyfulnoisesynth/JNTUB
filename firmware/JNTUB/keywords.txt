@@ -1,0 +1,8 @@
+JNTUB	KEYWORD1
+readParam1	KEYWORD2
+readParam2	KEYWORD2
+readParam3	KEYWORD2
+readGateTrg	KEYWORD2
+digitalWriteOut	KEYWORD2
+analogWriteOut	KEYWORD2
+DiscreteKnob	KEYWORD1
