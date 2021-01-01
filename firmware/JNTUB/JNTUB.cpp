@@ -25,32 +25,41 @@
 
 #include "JNTUB.h"
 
+#include <avr/io.h>
 #include <Arduino.h>
+
+#if defined(__AVR_ATtiny85__)
+#elif defined(__AVR_ATmega328P__) || defined(__AVR_ATmega328__)
+#else
+#error This AVR board is not supported
+#endif
 
 namespace JNTUB {
 
-namespace Io {
+/**
+ * ===========================================================================
+ *
+ *                             PIN MAPPINGS
+ *
+ * ===========================================================================
+ */
 
 #if defined(__AVR_ATtiny85__)
 
-  const uint8_t PIN_PARAM1 = A1;  // ADC1, chip pin 7
-  const uint8_t PIN_PARAM2 = A2;  // ADC2, chip pin 3
-  const uint8_t PIN_PARAM3 = A3;  // ADC3, chip pin 2
-  const uint8_t PIN_GATE   = 0;   // PB0, chip pin 5
-  const uint8_t PIN_OUT    = 1;   // PB1/OC1A, chip pin 6
+  const uint8_t PIN_PARAM1   = A1;  // ADC1, chip pin 7
+  const uint8_t PIN_PARAM2   = A2;  // ADC2, chip pin 3
+  const uint8_t PIN_PARAM3   = A3;  // ADC3, chip pin 2
+  const uint8_t PIN_GATE_TRG = 0;   // PB0, chip pin 5
+  const uint8_t PIN_OUT      = 1;   // PB1/OC1A, chip pin 6
 
-#elif defined (__AVR_ATmega328P__) || defined (__AVR_ATmega328__)
+#elif defined(__AVR_ATmega328P__) || defined(__AVR_ATmega328__)
 
   // I used a regular old Arduino Uno for initial testing.
-  const uint8_t PIN_PARAM1 = A3;  // ADC3, chip pin 26
-  const uint8_t PIN_PARAM2 = A4;  // ADC4, chip pin 27
-  const uint8_t PIN_PARAM3 = A5;  // ADC5, chip pin 28
-  const uint8_t PIN_GATE   = 8;   // PB0, chip pin 14
-  const uint8_t PIN_OUT    = 9;   // PB1/OC1A, chip pin 15
-
-#else
-
-  static_assert(false, "Pin mappings not defined for this AVR chip");
+  const uint8_t PIN_PARAM1   = A3;  // ADC3, chip pin 26
+  const uint8_t PIN_PARAM2   = A4;  // ADC4, chip pin 27
+  const uint8_t PIN_PARAM3   = A5;  // ADC5, chip pin 28
+  const uint8_t PIN_GATE_TRG = 8;   // PB0, chip pin 14
+  const uint8_t PIN_OUT      = 9;   // PB1/OC1A, chip pin 15
 
 #endif
 
@@ -66,20 +75,98 @@ uint16_t readParam3()
 {
   return analogRead(PIN_PARAM3);
 }
-bool readGate()
+bool readGateTrg()
 {
-  return digitalRead(PIN_GATE);
+  return digitalRead(PIN_GATE_TRG);
 }
+
+static bool fastPWMInitialized = false;
+void setUpFastPWM();
+
+// The PWM generator is always running, but that does not necessarily mean
+// that the PWM signal is being written to PIN_OUT all the time.
+// Certain registers have to be set in order for the PWM signal to affect
+// the state of a pin.
+static bool pwmOutputEnabled = false;
+static void enablePwmOutput();
+static void disablePwmOutput();
 
 void digitalWriteOut(bool value)
 {
+  if (pwmOutputEnabled)
+    disablePwmOutput();
+
   digitalWrite(PIN_OUT, value);
 }
+
 void analogWriteOut(uint8_t value)
 {
+  if (!fastPWMInitialized)
+    setUpFastPWM();
+
   analogWrite(PIN_OUT, value);
+
+  if (!pwmOutputEnabled)
+    enablePwmOutput();
 }
 
-}  //JNTUB::Io
+static void enablePwmOutput()
+{
+  // Need to also make sure pin is in output mode.
+  pinMode(PIN_OUT, OUTPUT);
+
+  pwmOutputEnabled = true;
+}
+
+static void disablePwmOutput()
+{
+  pwmOutputEnabled = false;
+}
+
+/**
+ * OK, ALL ABOUT FAST PWM
+ * ----------------------
+ * I will improve this explanation, I'm tired right now.
+ *
+ * Most (if not all) AVR boards have at least two Timer/Counters.
+ *
+ * The whole reason I need a custom implementation of analogWrite is
+ * because Arduino's implementation chooses to base its PWM output on
+ * Timer/Counter0, the same timer which the Arduino library relies upon for
+ * timing functions like millis() and micros(). One way I could increase
+ * the PWM frequency is to decrease the prescaler on Timer/Counter0 from 64
+ * down to 1, but that would make functions like millis() and micros()
+ * completely inaccurate. That's lame.
+ *
+ * Furthermore, Timer/Counter0 is locked to only 8MHz on ATtiny85 (that's the
+ * speed of the internal oscillator). In Fast PWM mode, every PWM period
+ * lasts exactly 256 counts, so 8MHz / 256 = maximum 31.25kHz PWM frequency.
+ * Unless I were to set my PWM filter cutoff to something as low as 1kHz,
+ * the output signal would have unavoidable jitter that could cause weird
+ * audio artifacts.
+ *
+ * The solution to all these problems is to use Timer/Counter1 for PWM.
+ * This has two great benefits:
+ *
+ *  - Timer/Counter0's prescaler remains unaffected, so I can use Arduino
+ *    library functions to accurately keep time (which is important for music).
+ *
+ *  - Timer/Counter1 can have its clock source set to the internal PLL
+ *    (phase-locked loop) generator rather than the 8MHz system clock. This
+ *    means that I can count at 64MHz, 8 times faster!
+ *
+ * With a base clock of 64MHz and a prescaler of 1, that gets me
+ * 64MHz / 256 = 250kHz of PWM. If I then filter that signal through a
+ * ~5kHz lowpass filter, I get a signal with minimal jitter and a decent enough
+ * bandwidth for nearly any kind of audio you would want to play through the
+ * board (aside from maybe Ariana Grande or a dog whistle).
+ */
+
+void setUpFastPWM()
+{
+  /* TODO: make fast PWM work for ATmega328p and ATtiny85 */
+
+  fastPWMInitialized = true;
+}
 
 }  //JNTUB

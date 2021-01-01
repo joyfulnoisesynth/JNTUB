@@ -30,8 +30,12 @@
 
 namespace JNTUB {
   /*
+   * =======================================================================
+   * INPUTS AND OUTPUT
+   * =======================================================================
+   *
    * All modules based on the JoyfulNoise Tiny Utility Board have the same
-   * set of inputs and outputs.
+   * set of inputs and one output.
    *
    * From top to bottom on the front panel, they are:
    *  - PARAM 3:
@@ -55,29 +59,35 @@ namespace JNTUB {
    *    - Digital values: 0 to 255(*)
    *
    * (*) OUT can be used as either a PWM analog output or a digital output.
-   *
-   * JNTUB::Io defines methods for reading/writing these inputs/outputs.
    */
-  namespace Io {
 
-    /**
-     * These are defined in JNTUB.cpp depending on the particular AVR chip.
-     */
-    extern const uint8_t PIN_PARAM1;
-    extern const uint8_t PIN_PARAM2;
-    extern const uint8_t PIN_PARAM3;
-    extern const uint8_t PIN_GATE;
-    extern const uint8_t PIN_OUT;
+  extern const uint8_t PIN_PARAM1;
+  extern const uint8_t PIN_PARAM2;
+  extern const uint8_t PIN_PARAM3;
+  extern const uint8_t PIN_GATE_TRG;
+  extern const uint8_t PIN_OUT;
 
-    uint16_t readParam1();
-    uint16_t readParam2();
-    uint16_t readParam3();
-    bool readGate();
+  uint16_t readParam1();
+  uint16_t readParam2();
+  uint16_t readParam3();
+  bool readGateTrg();
 
-    void digitalWriteOut(bool value);
-    void analogWriteOut(uint8_t value);
+  /**
+   * ON THE TOPIC OF PWM
+   * -------------------
+   *
+   * JNTUB uses PWM to generate an "analog" output signal from the ATtiny.
+   * The default PWM frequency on these AVRs is only around 500 Hz though!!
+   * That would be quite noticeable in a modular synthesizer.
+   *
+   * Luckily, the PWM frequency can be increased, but it requires some
+   * real fuckery with various registers and lots of datasheet reading.
+   * I do my best to explain it all in the implementation, but you needn't
+   * worry about the dirty details if you just want to use this library.
+   */
 
-  }  //JNTUB::Io
+  void digitalWriteOut(bool value);
+  void analogWriteOut(uint8_t value);
 
 }  //JNTUB
 

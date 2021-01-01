@@ -1,17 +1,26 @@
 #include <JNTUB.h>
 
-using namespace JNTUB;
+#define READ_PIN A0
+
+#define REPORT_RATE 500L
+unsigned long nextReport = 0;
+
+uint8_t val = 0;
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
 }
 
 void loop() {
-  uint16_t param1 = Io::readParam1();
-  uint16_t param2 = Io::readParam2();
-  uint16_t param3 = Io::readParam3();
+  //Io::analogWriteOut(val);
+  //delay(50);
+  //++val;
 
-  bool gate = Io::readGate();
+  uint16_t param1 = JNTUB::readParam1();
+  uint16_t param2 = JNTUB::readParam2();
+  uint16_t param3 = JNTUB::readParam3();
+
+  bool gate = JNTUB::readGateTrg();
 
   uint16_t output_val;
   if (gate) {
@@ -30,10 +39,17 @@ void loop() {
       output_val = param3;
   }
 
-  Io::analogWriteOut(map(output_val, 0, 1023, 0, 255));
+  JNTUB::analogWriteOut(map(output_val, 0, 1023, 0, 255));
 
-  char buf[256];
-  int len = sprintf(buf, "Param1: %i, Param2: %i, Param3: %i, Gate: %i\n", param1, param2, param3, gate);
-  Serial.write(buf, len);
-  delay(50);
+  if (millis() >= nextReport) {
+    nextReport += REPORT_RATE;
+
+    char buf[256];
+    int len = sprintf(buf, "Param1: %i, Param2: %i, Param3: %i, Gate: %i\n", param1, param2, param3, gate);
+    Serial.write(buf, len);
+
+    uint16_t actualVal = analogRead(READ_PIN);
+    len = sprintf(buf, "PWM val: %i, actual val: %i\n", output_val, actualVal);
+    Serial.write(buf, len);
+  }
 }
