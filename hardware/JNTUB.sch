@@ -5,7 +5,7 @@ $Descr USLetter 11000 8500
 encoding utf-8
 Sheet 1 3
 Title "JoyfulNoise Tiny Utility Board"
-Date "2020-12-29"
+Date "2020-12-31"
 Rev "0.1"
 Comp "Created by Ben Reeves"
 Comment1 "This hardware is open source under CC BY-SA 4.0"
