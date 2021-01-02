@@ -129,6 +129,54 @@ namespace JNTUB {
     uint16_t mCurVal;
   };
 
+  /**
+   * A clock generator that also reports phase.
+   *
+   * The generator is agnostic of timing units and operating environment.
+   * In other words, it need not run on an AVR board, and you can express
+   * clock periods as microseconds, milliseconds, whatever you want.
+   *
+   * To start the clock, call start() with the current real time unit
+   * (e.g., on Arduino, you could pass in the value of millis()).
+   * Every loop, call update() with the new current real time unit.
+   */
+  class Clock {
+  private:
+    uint32_t mPeriod;
+    uint32_t mLastRisingEdge;
+    uint8_t mDuty;
+    uint8_t mCurPhase;
+    uint8_t mRunning: 1,
+            mCurState: 1,
+            mPrevState: 1;
+
+  public:
+    Clock(uint32_t period=0);
+
+    uint32_t getPeriod() const;
+    void     setPeriod(uint32_t period);
+
+    static const uint16_t PHASE_MAX = 256;
+    uint8_t  getPhase() const;
+
+    // Clock is high when 0 <= phase < duty.
+    // Clock is low when duty <= phase < PHASE_MAX.
+    uint8_t  getDuty() const;
+    void     setDuty(uint8_t duty);
+
+    bool     getState() const;
+    bool     isRising() const;
+    bool     isFalling() const;
+
+    void     start(uint32_t time);
+    void     stop();
+    void     sync(uint32_t time, uint8_t phase=0);
+    void     update(uint32_t time);
+
+  private:
+    void     updateState();
+  };
+
 }  //JNTUB
 
 #endif  //JNTUB_H_

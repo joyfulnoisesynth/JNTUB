@@ -178,6 +178,12 @@ void setUpFastPWM()
  * ===========================================================================
  */
 
+/**
+ * ============================================================================
+ * DiscreteKnob
+ * ============================================================================
+ */
+
 DiscreteKnob::DiscreteKnob(uint8_t numValues, uint8_t hysteresis)
 {
   mNumValues = numValues;
@@ -215,6 +221,99 @@ void DiscreteKnob::update(uint16_t value)
 int DiscreteKnob::getValue() const
 {
   return mCurVal;
+}
+
+/**
+ * ============================================================================
+ * Clock
+ * ============================================================================
+ */
+
+Clock::Clock(uint32_t period)
+{
+  mPeriod = period;
+  mDuty = (uint8_t)(PHASE_MAX / 2);
+  stop();
+}
+
+uint32_t Clock::getPeriod() const
+{
+  return mPeriod;
+}
+void Clock::setPeriod(uint32_t period)
+{
+  mPeriod = period;
+}
+
+uint8_t Clock::getPhase() const
+{
+  return mCurPhase;
+}
+
+uint8_t Clock::getDuty() const
+{
+  return mDuty;
+}
+void Clock::setDuty(uint8_t duty)
+{
+  mDuty = duty;
+}
+
+bool Clock::getState() const
+{
+  return mCurState;
+}
+bool Clock::isRising() const
+{
+  return !mPrevState & mCurState;
+}
+bool Clock::isFalling() const
+{
+  return mPrevState & !mCurState;
+}
+
+void Clock::start(uint32_t time)
+{
+  mRunning = true;
+  sync(time);
+}
+
+void Clock::stop()
+{
+  mRunning = 0;
+  mCurPhase = 0;
+  mCurState = 0;
+  mPrevState = 0;
+}
+
+void Clock::sync(uint32_t time, uint8_t phase)
+{
+  if (!mRunning)
+    return;
+
+  mCurPhase = phase;
+  updateState();
+}
+
+void Clock::update(uint32_t time)
+{
+  if (!mRunning)
+    return;
+
+  // TODO: detect overflow?
+  uint32_t timeWithinPeriod = (time - mLastRisingEdge) % mPeriod;
+  mCurPhase = map(timeWithinPeriod, 0, mPeriod-1, 0, PHASE_MAX-1);
+
+  updateState();
+}
+
+void Clock::updateState()
+{
+  mPrevState = mCurState;
+  mCurState = mCurPhase < mDuty;
+
+  if (isRising())
+    mLastRisingEdge = time;
 }
 
 }  //JNTUB
