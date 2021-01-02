@@ -30,6 +30,7 @@
 #include <stdint.h>
 
 namespace JNTUB {
+
   /*
    * =======================================================================
    * INPUTS AND OUTPUT
@@ -62,33 +63,46 @@ namespace JNTUB {
    * (*) OUT can be used as either a PWM analog output or a digital output.
    */
 
-  extern const uint8_t PIN_PARAM1;
-  extern const uint8_t PIN_PARAM2;
-  extern const uint8_t PIN_PARAM3;
-  extern const uint8_t PIN_GATE_TRG;
-  extern const uint8_t PIN_OUT;
+  /**
+   * Contains all information needed to run a JNTUB-based module.
+   * This abstraction allows JNTUB firmwares to theoretically run on any
+   * platform (e.g., perhaps on VCVRack soon??).
+   */
+  struct Environment {
+    // Execution environment
+    uint32_t tMillis;
+    uint32_t tMicros;
 
-  uint16_t readParam1();
-  uint16_t readParam2();
-  uint16_t readParam3();
-  bool readGateTrg();
+    // Module parameters
+    uint16_t param1;  // 0 to 1023
+    uint16_t param2;  // 0 to 1023
+    uint16_t param3;  // 0 to 1023
+    bool gateTrg;     // 0 or 1
+  };
 
   /**
-   * ON THE TOPIC OF PWM
-   * -------------------
-   *
-   * JNTUB uses PWM to generate an "analog" output signal from the ATtiny.
-   * The default PWM frequency on these AVRs is only around 500 Hz though!!
-   * That would be quite noticeable in a modular synthesizer.
-   *
-   * Luckily, the PWM frequency can be increased, but it requires some
-   * real fuckery with various registers and lots of datasheet reading.
-   * I do my best to explain it all in the implementation, but you needn't
-   * worry about the dirty details if you just want to use this library.
+   * Inherit from this interface to implement a JNTUB-based module.
    */
+  class Module {
+  public:
+    // Called once upon module powerup.
+    virtual void setup(const Environment &env) = 0;
 
-  void digitalWriteOut(bool value);
-  void analogWriteOut(uint8_t value);
+    // Called endlessly in a loop.
+    // Returns the analog value to write out to the module output.
+    virtual uint8_t loop(const Environment &env) = 0;
+  };
+
+  namespace Device {
+
+    // Depending on the software platform on which the module runs,
+    // acquiring the input parameters / execution environment and producing
+    // the output will work differently. These interfaces abstract that away.
+    void setUpDevice();
+    Environment getEnvironment();
+    void writeOutput(uint8_t value);
+
+  }  //JNTUB::Device
 
   /*
    * =======================================================================
@@ -174,7 +188,7 @@ namespace JNTUB {
     void     update(uint32_t time);
 
   private:
-    void     updateState();
+    void     updateState(uint32_t time);
   };
 
 }  //JNTUB

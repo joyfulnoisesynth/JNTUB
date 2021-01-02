@@ -1,8 +1,9 @@
 JNTUB	KEYWORD1
-readParam1	KEYWORD2
-readParam2	KEYWORD2
-readParam3	KEYWORD2
-readGateTrg	KEYWORD2
-digitalWriteOut	KEYWORD2
-analogWriteOut	KEYWORD2
+Environment	KEYWORD1
+Module	KEYWORD1
+Device  KEYWORD1
+setUpDevice	KEYWORD2
+getEnvironment	KEYWORD2
+writeOutput	KEYWORD2
 DiscreteKnob	KEYWORD1
+Clock	KEYWORD1

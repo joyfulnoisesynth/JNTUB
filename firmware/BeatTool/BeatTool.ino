@@ -239,13 +239,19 @@ void clockMode()
 
 JNTUB::DiscreteKnob modeKnob(NUM_MODES, HYSTERESIS_AMT);
 
-void setup() {}
+void setup()
+{
+  JNTUB::Device::setUpDevice();
+}
 
-void loop() {
-  uint16_t modeRaw = JNTUB::readParam3();
+void loop()
+{
+  auto inputs = JNTUB::Device::getEnvironment();
+
+  uint16_t modeRaw = inputs.param1;
   modeKnob.update(modeRaw);
 
-  bool gate = JNTUB::readGateTrg();
+  bool gate = inputs.gateTrg;
   clockApproximator.update(gate);
 
   uint8_t mode = modeKnob.getValue();

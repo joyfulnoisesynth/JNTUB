@@ -37,6 +37,8 @@
 
 namespace JNTUB {
 
+namespace Device {
+
 /**
  * ===========================================================================
  *
@@ -64,25 +66,24 @@ namespace JNTUB {
 
 #endif
 
-uint16_t readParam1()
+static void setUpFastPWM();
+
+void setUpDevice()
 {
-  return analogRead(PIN_PARAM1);
-}
-uint16_t readParam2()
-{
-  return analogRead(PIN_PARAM2);
-}
-uint16_t readParam3()
-{
-  return analogRead(PIN_PARAM3);
-}
-bool readGateTrg()
-{
-  return digitalRead(PIN_GATE_TRG);
+  setUpFastPWM();
 }
 
-static bool fastPWMInitialized = false;
-void setUpFastPWM();
+Environment getEnvironment()
+{
+  Environment env;
+  env.tMillis = millis();
+  env.tMicros = micros();
+  env.param1 = analogRead(PIN_PARAM1);
+  env.param2 = analogRead(PIN_PARAM2);
+  env.param3 = analogRead(PIN_PARAM3);
+  env.gateTrg = digitalRead(PIN_GATE_TRG);
+  return env;
+}
 
 // The PWM generator is always running, but that does not necessarily mean
 // that the PWM signal is being written to PIN_OUT all the time.
@@ -91,6 +92,19 @@ void setUpFastPWM();
 static bool pwmOutputEnabled = false;
 static void enablePwmOutput();
 static void disablePwmOutput();
+
+static void digitalWriteOut(bool value);
+static void analogWriteOut(uint8_t value);
+
+void writeOutput(uint8_t value)
+{
+  if (value == 0)
+    digitalWriteOut(0);
+  else if (value == 255)
+    digitalWriteOut(1);
+  else
+    analogWriteOut(value);
+}
 
 void digitalWriteOut(bool value)
 {
@@ -102,16 +116,13 @@ void digitalWriteOut(bool value)
 
 void analogWriteOut(uint8_t value)
 {
-  if (!fastPWMInitialized)
-    setUpFastPWM();
-
   analogWrite(PIN_OUT, value);
 
   if (!pwmOutputEnabled)
     enablePwmOutput();
 }
 
-static void enablePwmOutput()
+void enablePwmOutput()
 {
   // Need to also make sure pin is in output mode.
   pinMode(PIN_OUT, OUTPUT);
@@ -119,7 +130,7 @@ static void enablePwmOutput()
   pwmOutputEnabled = true;
 }
 
-static void disablePwmOutput()
+void disablePwmOutput()
 {
   pwmOutputEnabled = false;
 }
@@ -166,9 +177,9 @@ static void disablePwmOutput()
 void setUpFastPWM()
 {
   /* TODO: make fast PWM work for ATmega328p and ATtiny85 */
-
-  fastPWMInitialized = true;
 }
+
+} //JNTUB::Device
 
 /**
  * ===========================================================================
@@ -292,7 +303,7 @@ void Clock::sync(uint32_t time, uint8_t phase)
     return;
 
   mCurPhase = phase;
-  updateState();
+  updateState(time);
 }
 
 void Clock::update(uint32_t time)
@@ -304,10 +315,10 @@ void Clock::update(uint32_t time)
   uint32_t timeWithinPeriod = (time - mLastRisingEdge) % mPeriod;
   mCurPhase = map(timeWithinPeriod, 0, mPeriod-1, 0, PHASE_MAX-1);
 
-  updateState();
+  updateState(time);
 }
 
-void Clock::updateState()
+void Clock::updateState(uint32_t time)
 {
   mPrevState = mCurState;
   mCurState = mCurPhase < mDuty;

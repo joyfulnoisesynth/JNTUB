@@ -31,20 +31,25 @@ unsigned long nextReport = 0;
 
 uint8_t val = 0;
 
-void setup() {
+void setup()
+{
+  JNTUB::Device::setUpDevice();
   Serial.begin(115200);
 }
 
-void loop() {
+void loop()
+{
   //Io::analogWriteOut(val);
   //delay(50);
   //++val;
 
-  uint16_t param1 = JNTUB::readParam1();
-  uint16_t param2 = JNTUB::readParam2();
-  uint16_t param3 = JNTUB::readParam3();
+  auto inputs = JNTUB::Device::getEnvironment();
 
-  bool gate = JNTUB::readGateTrg();
+  uint16_t param1 = inputs.param1;
+  uint16_t param2 = inputs.param2;
+  uint16_t param3 = inputs.param3;
+
+  bool gate = inputs.gateTrg;
 
   uint16_t output_val;
   if (gate) {
