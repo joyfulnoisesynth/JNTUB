@@ -17,25 +17,26 @@
   ==============================================================================
 
   Project:     JoyfulNoise Beat Tool
-  File:        BeatTool.ino
+  File:        BeatTool.h
   Description: 4HP Multi-Purpose Clock Utility Module
-
-  Arduino sketch for Beat Tool.
 
  */
 
-#include "BeatTool.h"
+#ifndef BEAT_TOOL_H
+#define BEAT_TOOL_H
 
-BeatToolModule module;
+// JoyfulNoise Tiny Utility Board Library
+#include <JNTUB.h>
 
-void setup()
-{
-  JNTUB::Device::setUpDevice();
-  module.setup();
-}
+class BeatToolModule : public JNTUB::Module {
+public:
+  BeatToolModule();
+  void setup() override;
+  uint8_t loop(const JNTUB::Environment &env) override;
 
-void loop()
-{
-  uint8_t output = module.loop(JNTUB::Device::getEnvironment());
-  JNTUB::Device::writeOutput(output);
-}
+private:
+  // Implementation details hidden behind opaque pointer.
+  class BeatTool *mImpl;
+};
+
+#endif //BEAT_TOOL_H

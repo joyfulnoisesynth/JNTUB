@@ -86,7 +86,7 @@ namespace JNTUB {
   class Module {
   public:
     // Called once upon module powerup.
-    virtual void setup(const Environment &env) = 0;
+    virtual void setup() = 0;
 
     // Called endlessly in a loop.
     // Returns the analog value to write out to the module output.
