@@ -131,6 +131,9 @@ namespace JNTUB {
     // hysteresis max: (1024 / numValues) / 2
     DiscreteKnob(uint8_t numValues, uint8_t hysteresis);
 
+    void setNumValues(uint8_t numValues);
+    void setHysteresis(uint8_t hysteresis);
+
     // Call once per loop with the read analog input value.
     void update(uint16_t value);
 
@@ -140,13 +143,16 @@ namespace JNTUB {
     // Retrieve the raw value of the knob.
     uint16_t getValueRaw() const;
 
+    // Map the knob's value from its discrete range onto some output range.
+    uint32_t mapValue(uint32_t lower, uint32_t upper) const;
+
     // Map the "inner value" of the knob to some output range.
     // The inner value is how far between the current bounds the knob is.
     // For example, if numValues is 2 and the knob is at 25%, then
     // the inner value is 50%.
-    uint16_t mapInnerValue(uint16_t lower, uint16_t upper) const;
+    uint32_t mapInnerValue(uint32_t lower, uint32_t upper) const;
 
-  private:
+  public:
     uint8_t mNumValues;
     uint8_t mHysteresis;
     uint8_t mCurVal;
@@ -155,6 +161,7 @@ namespace JNTUB {
     uint16_t mCurLower;  // start point of curVal in the input range (0 to 1023)
     uint16_t mCurUpper;  // end point of curVal in the input range (0 to 1023)
 
+    void initialize();
     void updateThresholds();
   };
 
@@ -163,29 +170,49 @@ namespace JNTUB {
    * piecewise-linear curve specified by an array.
    *
    * Optimized for inputs that don't change drastically or frequently.
+   *
+   * Note: the higher the granularity, the more suceptible to noise it is.
    */
   template<typename T>
   class CurveKnob {
-  private:
-    DiscreteKnob mKnob;
+  public:
+    DiscreteKnob mSegmentKnob;
+    DiscreteKnob mHysteresisKnob;
     const T *mCurve;
 
   public:
-    CurveKnob(const T *curve, uint8_t size)
-      : mKnob(size-1, 0), mCurve(curve)
+    CurveKnob(
+        const T *curve,
+        uint8_t size,
+        uint8_t granularity=255,
+        uint8_t hysteresis=0)
+      : mSegmentKnob(size-1, 0),
+        mHysteresisKnob(granularity, hysteresis),
+        mCurve(curve)
     {}
+
+    void setCurve(const T *curve)
+    {
+      mCurve = curve;
+    }
 
     // Call once per loop with the read analog input value.
     void update(uint16_t value)
     {
-      mKnob.update(value);
+      mSegmentKnob.update(value);
+      mHysteresisKnob.update(mSegmentKnob.mapInnerValue(0, 1023));
     }
 
     // Retrieve the current mapped value (curve[0] to curve[size-1]).
     T getValue() const
     {
-      uint8_t segment = mKnob.getValue();
-      return mKnob.mapInnerValue(mCurve[segment], mCurve[segment+1]);
+      uint8_t segment = mSegmentKnob.getValue();
+      return mHysteresisKnob.mapValue(mCurve[segment], mCurve[segment+1]);
+    }
+
+    uint16_t getValueRaw() const
+    {
+      return mSegmentKnob.getValueRaw();
     }
   };
 
@@ -201,7 +228,7 @@ namespace JNTUB {
    * Every loop, call update() with the new current real time unit.
    */
   class Clock {
-  private:
+  public:
     uint32_t mPeriod;
     uint32_t mLastRisingEdge;
     uint32_t mCurTime;

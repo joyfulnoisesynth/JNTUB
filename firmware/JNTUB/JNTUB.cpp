@@ -30,7 +30,13 @@
 #include <Arduino.h>
 
 #if defined(__AVR_ATtiny85__)
+#define DEBUG(...)
 #elif defined(__AVR_ATmega328P__) || defined(__AVR_ATmega328__)
+static char DEBUGBUF[256];
+#define DEBUG(...) ({ \
+    int len = snprintf(DEBUGBUF, sizeof(DEBUGBUF), ...); \
+    Serial.write(DEBUGBUF, len); \
+})
 #else
 #error This AVR board is not supported
 #endif
@@ -199,8 +205,26 @@ DiscreteKnob::DiscreteKnob(uint8_t numValues, uint8_t hysteresis)
 {
   mNumValues = numValues;
   mHysteresis = hysteresis;
-  mCurVal= 0;
-  mStep = 1024 / numValues;
+  mCurValRaw = 0;
+  initialize();
+}
+
+void DiscreteKnob::initialize()
+{
+  mStep = 1024 / mNumValues;
+  mCurVal = mCurValRaw / mStep;
+  updateThresholds();
+}
+
+void DiscreteKnob::setNumValues(uint8_t numValues)
+{
+  mNumValues = numValues;
+  initialize();
+}
+
+void DiscreteKnob::setHysteresis(uint8_t hysteresis)
+{
+  mHysteresis = hysteresis;
   updateThresholds();
 }
 
@@ -241,7 +265,12 @@ uint16_t DiscreteKnob::getValueRaw() const
   return mCurValRaw;
 }
 
-uint16_t DiscreteKnob::mapInnerValue(uint16_t lower, uint16_t upper) const
+uint32_t DiscreteKnob::mapValue(uint32_t lower, uint32_t upper) const
+{
+  return map(mCurVal, 0, mNumValues, lower, upper);
+}
+
+uint32_t DiscreteKnob::mapInnerValue(uint32_t lower, uint32_t upper) const
 {
   return map(mCurValRaw, mCurLower, mCurUpper, lower, upper);
 }
