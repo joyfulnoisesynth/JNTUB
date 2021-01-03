@@ -248,29 +248,6 @@ uint16_t DiscreteKnob::mapInnerValue(uint16_t lower, uint16_t upper) const
 
 /**
  * ============================================================================
- * CurveKnob
- * ============================================================================
- */
-
-CurveKnob::CurveKnob(const uint16_t *curve, uint8_t size)
-  : mKnob(size-1, 0), mCurve(curve)
-{}
-
-// Call once per loop with the read analog input value.
-void CurveKnob::update(uint16_t value)
-{
-  mKnob.update(value);
-}
-
-// Retrieve the current mapped value (curve[0] to curve[size-1]).
-uint16_t CurveKnob::getValue() const
-{
-  uint8_t segment = mKnob.getValue();
-  return mKnob.mapInnerValue(mCurve[segment], mCurve[segment+1]);
-}
-
-/**
- * ============================================================================
  * Clock
  * ============================================================================
  */
@@ -307,38 +284,39 @@ void Clock::setDuty(uint8_t duty)
 
 bool Clock::getState() const
 {
-  return mCurState;
+  return mCurPhase < mDuty;
 }
 bool Clock::isRising() const
 {
-  return !mPrevState & mCurState;
+  return !mPrevState && getState();
 }
 bool Clock::isFalling() const
 {
-  return mPrevState & !mCurState;
+  return mPrevState && !getState();
 }
 
-void Clock::start(uint32_t time)
+void Clock::start()
 {
   mRunning = true;
-  sync(time);
+  // Reset to start of period
+  sync(0);
 }
 
 void Clock::stop()
 {
-  mRunning = 0;
+  mRunning = false;
   mCurPhase = 0;
-  mCurState = 0;
-  mPrevState = 0;
 }
 
-void Clock::sync(uint32_t time, uint8_t phase)
+void Clock::sync(uint8_t phase)
 {
   if (!mRunning)
     return;
 
   mCurPhase = phase;
-  updateState(time);
+
+  // Reset lastRisingEdge to align with the new phase and make update() accurate
+  mLastRisingEdge = map(mCurPhase, 0, PHASE_MAX-1, mCurTime, mCurTime-mPeriod);
 }
 
 void Clock::update(uint32_t time)
@@ -346,20 +324,15 @@ void Clock::update(uint32_t time)
   if (!mRunning || mPeriod == 0)
     return;
 
+  mPrevState = getState();
+  mCurTime = time;
+
   // TODO: detect overflow?
   uint32_t timeWithinPeriod = (time - mLastRisingEdge) % mPeriod;
   mCurPhase = map(timeWithinPeriod, 0, mPeriod-1, 0, PHASE_MAX-1);
 
-  updateState(time);
-}
-
-void Clock::updateState(uint32_t time)
-{
-  mPrevState = mCurState;
-  mCurState = mCurPhase < mDuty;
-
   if (isRising())
-    mLastRisingEdge = time;
+    mLastRisingEdge = mCurTime;
 }
 
 }  //JNTUB

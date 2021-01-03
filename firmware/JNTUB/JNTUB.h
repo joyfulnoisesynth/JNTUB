@@ -29,6 +29,8 @@
 
 #include <stdint.h>
 
+#define NELEM(a) (sizeof(a))/(sizeof(a[0]))
+
 namespace JNTUB {
 
   /*
@@ -162,19 +164,29 @@ namespace JNTUB {
    *
    * Optimized for inputs that don't change drastically or frequently.
    */
+  template<typename T>
   class CurveKnob {
-  public:
-    CurveKnob(const uint16_t *curve, uint8_t size);
-
-    // Call once per loop with the read analog input value.
-    void update(uint16_t value);
-
-    // Retrieve the current mapped value (curve[0] to curve[size-1]).
-    uint16_t getValue() const;
-
   private:
     DiscreteKnob mKnob;
-    const uint16_t *mCurve;
+    const T *mCurve;
+
+  public:
+    CurveKnob(const T *curve, uint8_t size)
+      : mKnob(size-1, 0), mCurve(curve)
+    {}
+
+    // Call once per loop with the read analog input value.
+    void update(uint16_t value)
+    {
+      mKnob.update(value);
+    }
+
+    // Retrieve the current mapped value (curve[0] to curve[size-1]).
+    T getValue() const
+    {
+      uint8_t segment = mKnob.getValue();
+      return mKnob.mapInnerValue(mCurve[segment], mCurve[segment+1]);
+    }
   };
 
   /**
@@ -192,10 +204,10 @@ namespace JNTUB {
   private:
     uint32_t mPeriod;
     uint32_t mLastRisingEdge;
+    uint32_t mCurTime;
     uint8_t mDuty;
     uint8_t mCurPhase;
     uint8_t mRunning: 1,
-            mCurState: 1,
             mPrevState: 1;
 
   public:
@@ -216,15 +228,11 @@ namespace JNTUB {
     bool     isRising() const;
     bool     isFalling() const;
 
-    // NOTE: only call one of these per loop.
-    // TODO: fix this logic
-    void     start(uint32_t time);
+    // NOTE: call update() before modifying clock parameters
+    void     start();
     void     stop();
-    void     sync(uint32_t time, uint8_t phase=0);
+    void     sync(uint8_t phase=0);
     void     update(uint32_t time);
-
-  private:
-    void     updateState(uint32_t time);
   };
 
 }  //JNTUB
