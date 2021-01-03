@@ -127,11 +127,13 @@ namespace JNTUB {
    */
   class DiscreteKnob {
   public:
+    // numValues min: 1
+    // numValues max: 256
     // hysteresis min: 0
     // hysteresis max: (1024 / numValues) / 2
-    DiscreteKnob(uint8_t numValues, uint8_t hysteresis);
+    DiscreteKnob(uint16_t numValues, uint8_t hysteresis);
 
-    void setNumValues(uint8_t numValues);
+    void setNumValues(uint16_t numValues);
     void setHysteresis(uint8_t hysteresis);
 
     // Call once per loop with the read analog input value.
@@ -149,11 +151,11 @@ namespace JNTUB {
     // Map the "inner value" of the knob to some output range.
     // The inner value is how far between the current bounds the knob is.
     // For example, if numValues is 2 and the knob is at 25%, then
-    // the inner value is 50%.
+    // the inner value is 50% (halfway between 0 and 512)
     uint32_t mapInnerValue(uint32_t lower, uint32_t upper) const;
 
   public:
-    uint8_t mNumValues;
+    uint8_t mMaxVal;
     uint8_t mHysteresis;
     uint8_t mCurVal;
     uint16_t mCurValRaw;
@@ -161,7 +163,6 @@ namespace JNTUB {
     uint16_t mCurLower;  // start point of curVal in the input range (0 to 1023)
     uint16_t mCurUpper;  // end point of curVal in the input range (0 to 1023)
 
-    void initialize();
     void updateThresholds();
   };
 
