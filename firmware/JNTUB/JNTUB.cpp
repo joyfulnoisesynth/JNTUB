@@ -281,6 +281,34 @@ uint32_t DiscreteKnob::mapInnerValue(uint32_t lower, uint32_t upper) const
 
 /**
  * ============================================================================
+ * EdgeDetector
+ * ============================================================================
+ */
+
+EdgeDetector::EdgeDetector()
+{
+  mState = 0;
+  mPrevState = 0;
+}
+
+void EdgeDetector::update(bool value)
+{
+  mPrevState = mState;
+  mState = value;
+}
+
+bool EdgeDetector::isRising() const
+{
+  return !mPrevState & mState;
+}
+
+bool EdgeDetector::isFalling() const
+{
+  return mPrevState & !mState;
+}
+
+/**
+ * ============================================================================
  * Stopwatch
  * ============================================================================
  */

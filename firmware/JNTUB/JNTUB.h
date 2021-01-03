@@ -222,6 +222,22 @@ namespace JNTUB {
   };
 
   /**
+   * Simple class, reports rising and falling edges.
+   */
+  class EdgeDetector {
+  public:
+    EdgeDetector();
+
+    void update(bool value);
+
+    bool isRising() const;
+    bool isFalling() const;
+  public:
+    uint8_t mState: 1,
+            mPrevState: 1;
+  };
+
+  /**
    * Measures time between events and handles timer overflow.
    */
   class Stopwatch {
