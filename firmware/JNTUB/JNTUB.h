@@ -125,8 +125,6 @@ namespace JNTUB {
    */
   class DiscreteKnob {
   public:
-    // numValues min: 1
-    //           max: 128
     // hysteresis min: 0
     // hysteresis max: (1024 / numValues) / 2
     DiscreteKnob(uint8_t numValues, uint8_t hysteresis);
@@ -135,12 +133,48 @@ namespace JNTUB {
     void update(uint16_t value);
 
     // Retrieve the current discrete value (0 to numValues-1).
-    int getValue() const;
+    uint8_t getValue() const;
+
+    // Retrieve the raw value of the knob.
+    uint16_t getValueRaw() const;
+
+    // Map the "inner value" of the knob to some output range.
+    // The inner value is how far between the current bounds the knob is.
+    // For example, if numValues is 2 and the knob is at 25%, then
+    // the inner value is 50%.
+    uint16_t mapInnerValue(uint16_t lower, uint16_t upper) const;
 
   private:
     uint8_t mNumValues;
     uint8_t mHysteresis;
-    uint16_t mCurVal;
+    uint8_t mCurVal;
+    uint16_t mCurValRaw;
+    uint16_t mStep;
+    uint16_t mCurLower;  // start point of curVal in the input range (0 to 1023)
+    uint16_t mCurUpper;  // end point of curVal in the input range (0 to 1023)
+
+    void updateThresholds();
+  };
+
+  /**
+   * A knob that maps the input range of signals (0 to 1023) onto an arbitrary
+   * piecewise-linear curve specified by an array.
+   *
+   * Optimized for inputs that don't change drastically or frequently.
+   */
+  class CurveKnob {
+  public:
+    CurveKnob(const uint16_t *curve, uint8_t size);
+
+    // Call once per loop with the read analog input value.
+    void update(uint16_t value);
+
+    // Retrieve the current mapped value (curve[0] to curve[size-1]).
+    uint16_t getValue() const;
+
+  private:
+    DiscreteKnob mKnob;
+    const uint16_t *mCurve;
   };
 
   /**
@@ -182,6 +216,8 @@ namespace JNTUB {
     bool     isRising() const;
     bool     isFalling() const;
 
+    // NOTE: only call one of these per loop.
+    // TODO: fix this logic
     void     start(uint32_t time);
     void     stop();
     void     sync(uint32_t time, uint8_t phase=0);

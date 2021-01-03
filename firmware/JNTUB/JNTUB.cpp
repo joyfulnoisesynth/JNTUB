@@ -200,38 +200,73 @@ DiscreteKnob::DiscreteKnob(uint8_t numValues, uint8_t hysteresis)
   mNumValues = numValues;
   mHysteresis = hysteresis;
   mCurVal= 0;
+  mStep = 1024 / numValues;
+  updateThresholds();
 }
 
 void DiscreteKnob::update(uint16_t value)
 {
-  uint16_t stepSize = 1024 / mNumValues;
-  uint16_t curStep = mCurVal * stepSize;
+  mCurValRaw = value;
 
-  // Calculate the values that need to be passed in order to go up/down a value.
-  int nextStepDown, nextStepUp;
-
-  // If current val is 0, can't go down
-  if (mCurVal == 0)
-    nextStepDown = 0;
-  else
-    nextStepDown = curStep - stepSize - mHysteresis;
-  nextStepDown = constrain(nextStepDown, 0, 1023);
-
-  // If current val is numValues-1, can't go up
-  if (mCurVal == mNumValues - 1)
-    nextStepUp = 1024;
-  else
-    nextStepUp = curStep + stepSize + mHysteresis;
-  nextStepUp = constrain(nextStepUp, 0, 1023);
-
-  if (value < nextStepDown || value > nextStepUp) {
-    mCurVal = value / stepSize;
+  if (value < mCurLower || value > mCurUpper) {
+    mCurVal = value / mStep;
+    updateThresholds();
   }
 }
 
-int DiscreteKnob::getValue() const
+void DiscreteKnob::updateThresholds()
+{
+  uint16_t lower = mCurVal * mStep;
+
+  if (mCurVal == 0) {
+    mCurLower = 0;
+  } else {
+    mCurLower = lower - mHysteresis;
+  }
+
+  if (mCurVal == mNumValues - 1) {
+    mCurUpper = 1023;
+  } else {
+    mCurUpper = lower + mStep + mHysteresis;
+  }
+}
+
+uint8_t DiscreteKnob::getValue() const
 {
   return mCurVal;
+}
+
+uint16_t DiscreteKnob::getValueRaw() const
+{
+  return mCurValRaw;
+}
+
+uint16_t DiscreteKnob::mapInnerValue(uint16_t lower, uint16_t upper) const
+{
+  return map(mCurValRaw, mCurLower, mCurUpper, lower, upper);
+}
+
+/**
+ * ============================================================================
+ * CurveKnob
+ * ============================================================================
+ */
+
+CurveKnob::CurveKnob(const uint16_t *curve, uint8_t size)
+  : mKnob(size-1, 0), mCurve(curve)
+{}
+
+// Call once per loop with the read analog input value.
+void CurveKnob::update(uint16_t value)
+{
+  mKnob.update(value);
+}
+
+// Retrieve the current mapped value (curve[0] to curve[size-1]).
+uint16_t CurveKnob::getValue() const
+{
+  uint8_t segment = mKnob.getValue();
+  return mKnob.mapInnerValue(mCurve[segment], mCurve[segment+1]);
 }
 
 /**
@@ -308,7 +343,7 @@ void Clock::sync(uint32_t time, uint8_t phase)
 
 void Clock::update(uint32_t time)
 {
-  if (!mRunning)
+  if (!mRunning || mPeriod == 0)
     return;
 
   // TODO: detect overflow?
