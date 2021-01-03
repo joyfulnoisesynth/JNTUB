@@ -222,6 +222,38 @@ namespace JNTUB {
   };
 
   /**
+   * Measures time between events and handles timer overflow.
+   */
+  class Stopwatch {
+  public:
+    Stopwatch();
+
+    // Restart counting from 0
+    void reset();
+
+    // Call every loop with the current real time
+    void update(uint32_t time);
+
+    // Get time since the last reset. If real time has overflowed since the
+    // last reset, still reports the correct time.
+    // Does not account for multiple overflows occurring since reset.
+    uint32_t getTime() const;
+
+    // Get the current real time
+    uint32_t getRealTime() const;
+
+    // Get the real time at which the stopwatch was reset
+    uint32_t getStartTime() const;
+
+    // Manually reset stopwatch's start time
+    void setStartTime(uint32_t) const;
+
+  public:
+    uint32_t mStartTime;
+    uint32_t mCurTime;
+  };
+
+  /**
    * A clock generator that also reports phase.
    *
    * The generator is agnostic of timing units and operating environment.
@@ -234,13 +266,12 @@ namespace JNTUB {
    */
   class Clock {
   public:
+    Stopwatch mStopwatch;
     uint32_t mPeriod;
-    uint32_t mLastRisingEdge;
-    uint32_t mCurTime;
     uint8_t mDuty;
     uint8_t mCurPhase;
-    uint8_t mRunning: 1,
-            mPrevState: 1;
+    uint8_t mRunning;
+    uint8_t mPrevState;
 
   public:
     Clock(uint32_t period=0);

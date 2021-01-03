@@ -26,6 +26,8 @@
 
 #include "JNTUB.h"
 
+#include <limits.h>
+
 #include <avr/io.h>
 #include <Arduino.h>
 
@@ -279,6 +281,52 @@ uint32_t DiscreteKnob::mapInnerValue(uint32_t lower, uint32_t upper) const
 
 /**
  * ============================================================================
+ * Stopwatch
+ * ============================================================================
+ */
+
+Stopwatch::Stopwatch()
+{
+  mCurTime = 0;
+  mStartTime = 0;
+}
+
+void Stopwatch::reset()
+{
+  mStartTime = mCurTime;
+}
+
+void Stopwatch::update(uint32_t time)
+{
+  mCurTime = time;
+}
+
+uint32_t Stopwatch::getTime() const
+{
+  // Check for overflow
+  if (mCurTime < mStartTime) {
+    return UINT_MAX - mStartTime + mCurTime;
+  }
+  return mCurTime - mStartTime;
+}
+
+uint32_t Stopwatch::getRealTime() const
+{
+  return mCurTime;
+}
+
+uint32_t Stopwatch::getStartTime() const
+{
+  return mStartTime;
+}
+
+void setStartTime(uint32_t startTime) const
+{
+  mStartTime = startTime;
+}
+
+/**
+ * ============================================================================
  * Clock
  * ============================================================================
  */
@@ -346,24 +394,27 @@ void Clock::sync(uint8_t phase)
 
   mCurPhase = phase;
 
-  // Reset lastRisingEdge to align with the new phase and make update() accurate
-  mLastRisingEdge = map(mCurPhase, 0, PHASE_MAX-1, mCurTime, mCurTime-mPeriod);
+  // Adjust the start time of the current period, otherwise updates will
+  // proceed as if phase had not been modified
+  uint32_t timeWithinPeriod = mCurPhase * mPeriod / PHASE_MAX;
+  mStopwatch.setStartTime(mStopwatch.getRealTime() - timeWithinPeriod);
 }
 
 void Clock::update(uint32_t time)
 {
+  mStopwatch.update(time);
+
   if (!mRunning || mPeriod == 0)
     return;
 
   mPrevState = getState();
-  mCurTime = time;
 
-  // TODO: detect overflow?
-  uint32_t timeWithinPeriod = (time - mLastRisingEdge) % mPeriod;
-  mCurPhase = map(timeWithinPeriod, 0, mPeriod-1, 0, PHASE_MAX-1);
+  uint32_t timeWithinPeriod = mStopwatch.getTime() % mPeriod;
+  mCurPhase = timeWithinPeriod * PHASE_MAX / mPeriod;
 
+  // Start counting a new period if one is just starting
   if (isRising())
-    mLastRisingEdge = mCurTime;
+    mStopwatch.reset();
 }
 
 }  //JNTUB
