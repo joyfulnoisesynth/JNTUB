@@ -202,7 +202,7 @@ void setUpFastPWM()
  */
 
 DiscreteKnob::DiscreteKnob(uint8_t numValues, uint8_t hysteresis)
-  : mMaxVal(0), mHysteresis(0), mCurVal(0), mCurValRaw(0),
+  : mMaxVal(0), mHysteresis(0), mCurVal(0), mPrevVal(0), mCurValRaw(0),
     mStep(0), mCurLower(0), mCurUpper(0)
 {
   setNumValues(numValues);
@@ -229,6 +229,7 @@ void DiscreteKnob::update(uint16_t value)
   mCurValRaw = value;
 
   if (value < mCurLower || value > mCurUpper) {
+    mPrevVal = mCurVal;
     mCurVal = value / mStep;
     updateThresholds();
   }
@@ -259,6 +260,11 @@ uint8_t DiscreteKnob::getValue() const
 uint16_t DiscreteKnob::getValueRaw() const
 {
   return mCurValRaw;
+}
+
+bool DiscreteKnob::valueChanged() const
+{
+  return mPrevVal != mCurVal;
 }
 
 uint32_t DiscreteKnob::mapValue(uint32_t lower, uint32_t upper) const

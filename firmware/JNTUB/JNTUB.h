@@ -145,6 +145,9 @@ namespace JNTUB {
     // Retrieve the raw value of the knob.
     uint16_t getValueRaw() const;
 
+    // Whether the value changed since last loop.
+    bool valueChanged() const;
+
     // Map the knob's value from its discrete range onto some output range.
     uint32_t mapValue(uint32_t lower, uint32_t upper) const;
 
@@ -158,6 +161,7 @@ namespace JNTUB {
     uint8_t mMaxVal;
     uint8_t mHysteresis;
     uint8_t mCurVal;
+    uint8_t mPrevVal;
     uint16_t mCurValRaw;
     uint16_t mStep;
     uint16_t mCurLower;  // start point of curVal in the input range (0 to 1023)
