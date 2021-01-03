@@ -29,56 +29,76 @@
 #define REPORT_RATE 500L
 unsigned long nextReport = 0;
 
-uint8_t val = 0;
+JNTUB::DiscreteKnob knob1(2, 10);
+JNTUB::Clock clock;
+bool prevGate;
 
 void setup()
 {
   JNTUB::Device::setUpDevice();
   Serial.begin(115200);
+  Serial.setTimeout(1);
+  clock.setPeriod(500); //ms
+  clock.start();
+
+  prevGate = false;
 }
 
 void loop()
 {
-  //Io::analogWriteOut(val);
-  //delay(50);
-  //++val;
-
   auto inputs = JNTUB::Device::getEnvironment();
 
   uint16_t param1 = inputs.param1;
   uint16_t param2 = inputs.param2;
   uint16_t param3 = inputs.param3;
-
   bool gate = inputs.gateTrg;
 
-  uint16_t output_val;
-  if (gate) {
-    // Output the min of the three inputs.
-    output_val = param1;
-    if (param2 < output_val)
-      output_val = param2;
-    if (param3 < output_val)
-      output_val = param3;
-  } else {
-    // Output the max of the three inputs
-    output_val = param1;
-    if (param2 > output_val)
-      output_val = param2;
-    if (param3 > output_val)
-      output_val = param3;
-  }
+  knob1.update(param1);
+  clock.update(millis());
 
-  JNTUB::analogWriteOut(map(output_val, 0, 1023, 0, 255));
+  if (gate & !prevGate)
+    clock.sync();
+
+  JNTUB::Device::writeOutput(clock.getState() ? 255 : 0);
+
+  prevGate = gate;
 
   if (millis() >= nextReport) {
     nextReport += REPORT_RATE;
-
     char buf[256];
-    int len = sprintf(buf, "Param1: %i, Param2: %i, Param3: %i, Gate: %i\n", param1, param2, param3, gate);
+    int len = sprintf(
+      buf,
+      "raw1=%i, knob1=%i, inner=%i\n",
+      param1,
+      knob1.getValue(),
+      knob1.mapInnerValue(0, 99));
     Serial.write(buf, len);
+  }
 
-    uint16_t actualVal = analogRead(READ_PIN);
-    len = sprintf(buf, "PWM val: %i, actual val: %i\n", output_val, actualVal);
-    Serial.write(buf, len);
+  if (Serial.available()) {
+    char action = Serial.read();
+    int value = Serial.parseInt();
+    if (value) {
+      switch (action) {
+      case 'p':
+        Serial.print("Setting clock period to ");
+        Serial.print(value, DEC);
+        Serial.println("ms");
+        clock.setPeriod(value);
+        break;
+      case 'n':
+        Serial.print("Setting num knob values to ");
+        Serial.println(value, DEC);
+        knob1.setNumValues(value);
+        break;
+      case 'h':
+        Serial.print("Setting knob hysteresis to ");
+        Serial.println(value, DEC);
+        knob1.setHysteresis(value);
+        break;
+      default:
+        break;
+      }
+    }
   }
 }
