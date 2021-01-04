@@ -203,7 +203,7 @@ void setUpFastPWM()
  * ============================================================================
  */
 
-DiscreteKnob::DiscreteKnob(uint8_t numValues, uint8_t hysteresis)
+DiscreteKnob::DiscreteKnob(uint16_t numValues, uint8_t hysteresis)
   : mMaxVal(0), mHysteresis(0), mCurVal(0), mPrevVal(0), mCurValRaw(0),
     mStep(0), mCurLower(0), mCurUpper(0)
 {
@@ -348,7 +348,7 @@ uint32_t Stopwatch::getStartTime() const
   return mStartTime;
 }
 
-void setStartTime(uint32_t startTime) const
+void Stopwatch::setStartTime(uint32_t startTime)
 {
   mStartTime = startTime;
 }

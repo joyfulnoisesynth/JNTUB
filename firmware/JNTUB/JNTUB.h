@@ -262,7 +262,7 @@ namespace JNTUB {
     uint32_t getStartTime() const;
 
     // Manually reset stopwatch's start time
-    void setStartTime(uint32_t) const;
+    void setStartTime(uint32_t);
 
   public:
     uint32_t mStartTime;
