@@ -116,31 +116,51 @@ void writeOutput(uint8_t value)
 
 void digitalWriteOut(bool value)
 {
-  if (pwmOutputEnabled)
-    disablePwmOutput();
-
+  disablePwmOutput();
   digitalWrite(PIN_OUT, value);
 }
 
 void analogWriteOut(uint8_t value)
 {
-  analogWrite(PIN_OUT, value);
-
-  if (!pwmOutputEnabled)
-    enablePwmOutput();
+#if defined(__AVR_ATtiny85__) || \
+    defined(__AVR_ATmega328P__) || defined(__AVR_ATmega328__)
+  // Output-Compare Match Register A for Timer/Counter1: sets PWM duty
+  OCR1A = value;
+#endif
+  enablePwmOutput();
 }
 
 void enablePwmOutput()
 {
+#if defined(__AVR_ATtiny85__)
+  // Timer/Counter1 control status register TCCR1
+  // Bit COM1A1 high: PWM generator output is connected to OC1A pin
+  // Bit COM1A1 low: PWM generator output is disconnected from OC1A pin
+  bitSet(TCCR1, COM1A1);
+#elif defined(__AVR_ATmega328P__) || defined(__AVR_ATmega328__)
+  // Timer/Counter1 control status register TCCR1A
+  // Bit COM1A1 high: PWM generator output is connected to OC1A pin
+  // Bit COM1A1 low: PWM generator output is disconnected from OC1A pin
+  bitSet(TCCR1A, COM1A1);
+#endif
+
   // Need to also make sure pin is in output mode.
   pinMode(PIN_OUT, OUTPUT);
-
-  pwmOutputEnabled = true;
 }
 
 void disablePwmOutput()
 {
-  pwmOutputEnabled = false;
+#if defined(__AVR_ATtiny85__)
+  // Timer/Counter1 control status register TCCR1
+  // Bit COM1A1 high: PWM generator output is connected to OC1A pin
+  // Bit COM1A1 low: PWM generator output is disconnected from OC1A pin
+  bitClear(TCCR1, COM1A1);
+#elif defined(__AVR_ATmega328P__) || defined(__AVR_ATmega328__)
+  // Timer/Counter1 control status register TCCR1A
+  // Bit COM1A1 high: PWM generator output is connected to OC1A pin
+  // Bit COM1A1 low: PWM generator output is disconnected from OC1A pin
+  bitClear(TCCR1A, COM1A1);
+#endif
 }
 
 /**
@@ -171,8 +191,8 @@ void disablePwmOutput()
  *  - Timer/Counter0's prescaler remains unaffected, so I can use Arduino
  *    library functions to accurately keep time (which is important for music).
  *
- *  - Timer/Counter1 can have its clock source set to the internal PLL
- *    (phase-locked loop) generator rather than the 8MHz system clock. This
+ *  - On ATtiny85, Timer/Counter1 can have its clock source set to the internal
+ *    PLL (phase-locked loop) generator rather than the 8MHz system clock. This
  *    means that I can count at 64MHz, 8 times faster!
  *
  * With a base clock of 64MHz and a prescaler of 1, that gets me
@@ -185,6 +205,53 @@ void disablePwmOutput()
 void setUpFastPWM()
 {
   /* TODO: make fast PWM work for ATmega328p and ATtiny85 */
+#if defined(__AVR_ATtiny85__)
+
+  // Enable PLL
+  bitSet(PLLCSR, PLLE);
+
+  // Datasheet recommends waiting 100us to avoid initial noise in the PLL
+  // getting locked
+  delayMicroseconds(100);
+
+  // Wait for PLL to be locked (denoted by PLOCK bit in PLLCSR)
+  while (!bitRead(PLLCSR, PLOCK));
+
+  // Set PCKE to use PLL as the clock for Timer/Counter1
+  bitSet(PLLCSR, PCKE);
+
+  // Timer/Counter1 control status register TCCR1:
+  // PWM1A - Enable PWM generator A for Timer/Counter1
+  // CS1[3:0] - Prescaler select
+  //   - 0001 - Prescaler = 1
+  TCCR1 = 1<<PWM1A | 1<<CS10;
+
+#elif defined(__AVR_ATmega328P__) || defined(__AVR_ATmega328__)
+
+  // ATmega328p has no PLL, so I'm limited to the 16MHz internal clock.
+  // Compared to the 64MHz PLL clock on ATTiny85, that's 4x slower,
+  // so that'll be only 62.5kHz PWM. Oh well, it's just for testing.
+
+  // ATmega328p's Timer/Counter1 has more PWM modes than that of the ATTiny85.
+  // The ATTiny85 only has one PWM mode, and it's equivalent on ATmega328p is
+  // "Fast PWM mode."
+  // Also, ATmega328's Timer/Counter1 is a 16-bit counter, so we'll need to
+  // specify that we only want 8 bit 
+  // Both of these things are set via the WGM1[3:0] bits of TCCR1A/TCCR1B
+  //    WMG1[3:0] = 0101 --> Fast PWM, 8-bit
+
+  // Timer/Counter1 control status register is split between two registers:
+  // TCCR1A and TCCR1B.
+  //  - TCCR1A:
+  //    * WGM1[1:0] - Waveform Generation Mode, bottom two bits (rest in TCCR1B)
+  //  - TCCR1B:
+  //    * WGM1[3:2] - Waveform Generation Mode, top two bits (rest in TCCR1A)
+  //    * CS1[2:0] - Clock Select
+  //        - 0001 = Internal clock, no prescaler
+  TCCR1A = 1<<WGM10;
+  TCCR1B = 1<<WGM12 | 1<<CS10;
+
+#endif
 }
 
 } //JNTUB::Device
