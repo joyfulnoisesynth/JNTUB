@@ -402,7 +402,7 @@ public:
   }
   bool getState() const
   {
-    return getPhase() > mClkIn->getDuty();
+    return mCurPhase < mClkIn->getDuty();
   }
   bool isRising() const
   {
@@ -410,7 +410,7 @@ public:
   }
   bool isFalling() const
   {
-    return !mPrevState && getState();
+    return mPrevState && !getState();
   }
 
   // Do not call until clkIn has been updated.
@@ -430,7 +430,7 @@ public:
  */
 template<typename ClockT>
 class ClockDivider {
-private:
+public:
   const ClockT *mClkIn;
   uint8_t mDiv;
   // How many edges have occurred in the input clock since the last edge
@@ -446,6 +446,7 @@ public:
     mDiv = div;
     mCurPhase = 0;
     mPrevState = 0;
+    mNumEdges = mDiv * 2;
   }
 
   void setDivisor(uint8_t div)
@@ -462,7 +463,7 @@ public:
   }
   bool getState() const
   {
-    return mCurPhase > mClkIn->getDuty();
+    return mCurPhase < mClkIn->getDuty();
   }
   bool isRising() const
   {
@@ -470,7 +471,7 @@ public:
   }
   bool isFalling() const
   {
-    return !mPrevState && getState();
+    return mPrevState && !getState();
   }
 
   // Do not call until clkIn has been updated.
@@ -478,15 +479,19 @@ public:
   {
     mPrevState = getState();
 
-    if (mClkIn->isRising() || mClkIn->isFalling())
+    if (mClkIn->isRising() || mClkIn->isFalling()) {
       ++mNumEdges;
+    }
 
     if (mNumEdges >= mDiv * 2)
       mNumEdges = 0;
 
-    uint8_t phasePerInputPeriod = JNTUB::Clock::PHASE_MAX / mDiv;
-    uint8_t phaseAccumulatedFromEdges = mNumEdges * phasePerInputPeriod / 2;
-    mCurPhase = phaseAccumulatedFromEdges + (mClkIn->getPhase() / mDiv);
+    uint8_t phasePerInputHalfPeriod = JNTUB::Clock::PHASE_MAX / mDiv / 2;
+    uint8_t phaseAccumulatedFromEdges = mNumEdges * phasePerInputHalfPeriod;
+    uint8_t currentPhaseInInputHalfPeriod =
+      mClkIn->getPhase() % (JNTUB::Clock::PHASE_MAX / 2);
+    mCurPhase =
+      phaseAccumulatedFromEdges + (currentPhaseInInputHalfPeriod / mDiv);
   }
 };
 
@@ -510,6 +515,10 @@ private:
   MultT clkMultiplier;
   DivT clkDivider;
 
+  Multiplier multiplier;
+
+  const int TEST_CLK_OUT = 7;
+
 public:
   MultiplyMode()
     : rateKnob(NELEM(MULTIPLIERS[0]), HYSTERESIS_AMT),
@@ -520,6 +529,8 @@ public:
 
   void setup()
   {
+    multiplier = {1, 1};
+    clockFollower.start();
   }
 
   uint8_t loop(
@@ -541,19 +552,47 @@ public:
       clockFollower.sync(clockFollower.getDuty());
     }
 
+    digitalWrite(TEST_CLK_OUT, clockFollower.getState());
+
     // Select the desired multiplier
     uint8_t range = rangeKnob.getValue();
     uint8_t rate = rateKnob.getValue();
-    Multiplier mult = MULTIPLIERS[range][rate];
+    this->multiplier = MULTIPLIERS[range][rate];
     if (divide)
-      mult = mult.reciprocal();
+      this->multiplier = this->multiplier.reciprocal();
 
-    clkMultiplier.setMultiplier(mult.numerator);
+    clkMultiplier.setMultiplier(this->multiplier.numerator);
     clkMultiplier.update();
-    clkDivider.setDivisor(mult.denominator);
+    clkDivider.setDivisor(this->multiplier.denominator);
     clkDivider.update();
 
     return clkDivider.getState() ? 255 : 0;
+  }
+
+  void debug()
+  {
+    DEBUG(">>>MULTIPLY MODE");
+
+    DEBUG(", multiplier=");
+    DEBUG(multiplier.numerator, DEC);
+    DEBUG('/');
+    DEBUG(multiplier.denominator, DEC);
+
+    DEBUG(", estimatedPeriod=");
+    DEBUG(clockFollower.getPeriod(), DEC);
+
+    DEBUG(rateKnob.getValue(), DEC);
+
+    DEBUG(", follower.phase=");
+    DEBUG(clockFollower.getPhase(), DEC);
+
+    DEBUG(", clkDiv.phase=");
+    DEBUG(clkDivider.mCurPhase, DEC);
+
+    DEBUG(", clkDiv.edges=");
+    DEBUG(clkDivider.mNumEdges, DEC);
+
+    DEBUG('\n');
   }
 };
 
@@ -604,27 +643,34 @@ public:
       case 0:
         output = multiplyMode.loop(
             time, rateIn, rangeRptIn, gateIn, true /* divide */);
+        break;
       case 1:
         output = multiplyMode.loop(
             time, rateIn, rangeRptIn, gateIn, false /* multiply */);
+        break;
       case 2:
         output = burstMode.loop(time, rateIn, rangeRptIn, gateIn);
+        break;
       case 3:
         output = clockMode.loop(time, rateIn, rangeRptIn, gateIn);
+        break;
       default:
         break;
     };
 
     if (time - lastReport >= REPORT_RATE) {
       lastReport = time;
+      Serial.println(mode);
       //Serial.println(env.tMillis, DEC);
       //Serial.println(env.tMicros, DEC);
       switch(mode) {
-      case 3:
-        //clockMode.debug();
-        break;
       case 0:
       case 1:
+        multiplyMode.debug();
+        break;
+      case 3:
+        clockMode.debug();
+        break;
       case 2:
       default:
         break;
