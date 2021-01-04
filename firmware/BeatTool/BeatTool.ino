@@ -34,8 +34,8 @@ uint32_t testTime;
 
 void setup()
 {
-  Serial.begin(115200);
-  Serial.setTimeout(1);
+  //Serial.begin(115200);
+  //Serial.setTimeout(1);
   testClock.setPeriod(500000); //us
   testClock.start();
   testTime = 0;
@@ -51,7 +51,7 @@ void loop()
   testClock.update(micros());
   digitalWrite(TEST_CLK_PIN, testClock.getState());
 
-  if (Serial.available()) {
+/*  if (Serial.available()) {
     char action = Serial.read();
     int value = Serial.parseInt();
     if (value) {
@@ -71,7 +71,7 @@ void loop()
         break;
       }
     }
-  }
+  }*/
 
   uint8_t output = module.loop(JNTUB::Device::getEnvironment());
   JNTUB::Device::writeOutput(output);

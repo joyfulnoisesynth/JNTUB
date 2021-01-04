@@ -179,7 +179,7 @@ public:
     DEBUG("        knob");
 
     DEBUG(", n=");
-    DEBUG(rateKnob.mSegmentKnob.mNumValues, DEC);
+    DEBUG(rateKnob.mSegmentKnob.mMaxVal + 1, DEC);
 
     DEBUG(", val=");
     DEBUG(rateKnob.mSegmentKnob.mCurVal, DEC);
@@ -249,7 +249,7 @@ private:
   JNTUB::DiscreteKnob repeatKnob;
   JNTUB::CurveKnob<uint32_t> rateKnob;
   JNTUB::Clock clock;
-  bool prevTrg;
+  JNTUB::EdgeDetector trigger;
   uint8_t numGatesSent;
 
 public:
@@ -261,7 +261,6 @@ public:
   void setup()
   {
     numGatesSent = 0;
-    prevTrg = 0;
   }
 
   uint8_t loop(uint32_t time, uint16_t rateIn, uint16_t repeatsIn, bool trgIn)
@@ -269,13 +268,14 @@ public:
     rateKnob.update(rateIn);
     repeatKnob.update(repeatsIn);
     clock.update(time);
+    trigger.update(trgIn);
 
     // Update rate
     uint16_t periodMicros = rateKnob.getValue();
     clock.setPeriod(periodMicros);
 
     // Start a new burst on trigger
-    if (trgIn && !prevTrg) {
+    if (trigger.isRising()) {
       clock.start();
       numGatesSent = 0;
     }
@@ -291,8 +291,6 @@ public:
       clock.stop();
       numGatesSent = 0;
     }
-
-    prevTrg = trgIn;
 
     return clock.getState() ? 255 : 0;
   }
@@ -352,7 +350,13 @@ public:
 struct Multiplier {
   uint8_t numerator;
   uint8_t denominator;
+
+  Multiplier reciprocal() const
+  {
+    return { denominator, numerator };
+  }
 };
+
 const Multiplier MULTIPLIERS[][8] = {
   { {1, 1}, {5, 4}, {4, 3}, {3, 2}, {8, 5}, {5, 3}, {5, 2}, {12, 5} },
   { {1, 1}, {2, 1}, {3, 1}, {4, 1}, {5, 1}, {6, 1}, {7, 1}, {8, 1} },
@@ -360,26 +364,162 @@ const Multiplier MULTIPLIERS[][8] = {
   { {1, 1}, {2, 1}, {4, 1}, {8, 1}, {16, 1}, {32, 1}, {64, 1}, {128, 1} },
 };
 
+/**
+ * Uses the phase of an input clock to derive a multiplied
+ * version of the input clock.
+ *
+ * Implements a Clock-like interface so it can be used as input to
+ * another ClockMultiplier or ClockDivider.
+ */
+template<typename ClockT>
+class ClockMultiplier {
+private:
+  const ClockT *mClkIn;
+  uint8_t mMult;
+  uint8_t mCurPhase;
+  bool mPrevState;
+
+public:
+  ClockMultiplier(const ClockT *clkIn, uint8_t mult=1)
+  {
+    mClkIn = clkIn;
+    mMult = mult;
+    mCurPhase = 0;
+    mPrevState = 0;
+  }
+
+  void setMultiplier(uint8_t mult)
+  {
+    mMult = mult;
+  }
+  uint8_t getDuty() const
+  {
+    return mClkIn->getDuty();
+  }
+  uint8_t getPhase() const
+  {
+    return mCurPhase;
+  }
+  bool getState() const
+  {
+    return getPhase() > mClkIn->getDuty();
+  }
+  bool isRising() const
+  {
+    return !mPrevState && getState();
+  }
+  bool isFalling() const
+  {
+    return !mPrevState && getState();
+  }
+
+  // Do not call until clkIn has been updated.
+  void update()
+  {
+    mPrevState = getState();
+    mCurPhase = (mClkIn->getPhase() * mMult) % JNTUB::Clock::PHASE_MAX;
+  }
+};
+
+/**
+ * Uses the edges of an input clock to derive a divided
+ * version of the input clock.
+ *
+ * Implements a Clock-like interface so it can be used as input to
+ * another ClockMultiplier or ClockDivider.
+ */
+template<typename ClockT>
+class ClockDivider {
+private:
+  const ClockT *mClkIn;
+  uint8_t mDiv;
+  // How many edges have occurred in the input clock since the last edge
+  // of the divided clock? Flip-flop the output every mDiv edges.
+  uint8_t mNumEdges;
+  uint8_t mCurPhase;
+  bool mPrevState;
+
+public:
+  ClockDivider(const ClockT *clkIn, uint8_t div=1)
+  {
+    mClkIn = clkIn;
+    mDiv = div;
+    mCurPhase = 0;
+    mPrevState = 0;
+  }
+
+  void setDivisor(uint8_t div)
+  {
+    mDiv = div;
+  }
+  uint8_t getDuty() const
+  {
+    return mClkIn->getDuty();
+  }
+  uint8_t getPhase() const
+  {
+    return mCurPhase;
+  }
+  bool getState() const
+  {
+    return mCurPhase > mClkIn->getDuty();
+  }
+  bool isRising() const
+  {
+    return !mPrevState && getState();
+  }
+  bool isFalling() const
+  {
+    return !mPrevState && getState();
+  }
+
+  // Do not call until clkIn has been updated.
+  void update()
+  {
+    mPrevState = getState();
+
+    if (mClkIn->isRising() || mClkIn->isFalling())
+      ++mNumEdges;
+
+    if (mNumEdges >= mDiv * 2)
+      mNumEdges = 0;
+
+    uint8_t phasePerInputPeriod = JNTUB::Clock::PHASE_MAX / mDiv;
+    uint8_t phaseAccumulatedFromEdges = mNumEdges * phasePerInputPeriod / 2;
+    mCurPhase = phaseAccumulatedFromEdges + (mClkIn->getPhase() / mDiv);
+  }
+};
+
 class MultiplyMode {
 private:
   JNTUB::DiscreteKnob rateKnob;
   JNTUB::DiscreteKnob rangeKnob;
+
   // Keep an internal running clock and continually set its period
   // to what we think the period of the input clock is.
   JNTUB::Clock clockFollower;
-  uint32_t tLastRisingEdge;
-  bool prevClk;
+  JNTUB::EdgeDetector clkEdge;
+  JNTUB::Stopwatch periodTimer;
+
+  // All possible fractional multipliers/divisors are accomplished using a
+  // combination of one clock multiplier and one clock divider.
+  // The multiplier multiplies the input clock by the numerator,
+  // and the divider divides the resulting signal by the denominator.
+  using MultT = ClockMultiplier<JNTUB::Clock>;
+  using DivT = ClockDivider<MultT>;
+  MultT clkMultiplier;
+  DivT clkDivider;
 
 public:
   MultiplyMode()
     : rateKnob(NELEM(MULTIPLIERS[0]), HYSTERESIS_AMT),
-      rangeKnob(NELEM(MULTIPLIERS), HYSTERESIS_AMT)
+      rangeKnob(NELEM(MULTIPLIERS), HYSTERESIS_AMT),
+      clkMultiplier(&clockFollower),
+      clkDivider(&clkMultiplier)
   {}
 
   void setup()
   {
-    tLastRisingEdge = 0;
-    prevClk = 0;
   }
 
   uint8_t loop(
@@ -388,19 +528,32 @@ public:
     rateKnob.update(rateIn);
     rangeKnob.update(rangeIn);
     clockFollower.update(time);
+    clkEdge.update(clkIn);
+    periodTimer.update(time);
 
     // Sync the clock follower up on every clock transition
-    if (clkIn & !prevClk) {  // Rising edge
-      // Update period estimate
-      clockFollower.setPeriod(time - tLastRisingEdge);
-      tLastRisingEdge = time;
+    if (clkEdge.isRising()) {
+      // Update period estimate and reset timer
+      clockFollower.setPeriod(periodTimer.getTime());
+      periodTimer.reset();
       clockFollower.sync(0);
-    } else if (!clkIn & prevClk) { // Falling edge
+    } else if (clkEdge.isFalling()) {
       clockFollower.sync(clockFollower.getDuty());
     }
 
-    prevClk = clkIn;
-    return 0;
+    // Select the desired multiplier
+    uint8_t range = rangeKnob.getValue();
+    uint8_t rate = rateKnob.getValue();
+    Multiplier mult = MULTIPLIERS[range][rate];
+    if (divide)
+      mult = mult.reciprocal();
+
+    clkMultiplier.setMultiplier(mult.numerator);
+    clkMultiplier.update();
+    clkDivider.setDivisor(mult.denominator);
+    clkDivider.update();
+
+    return clkDivider.getState() ? 255 : 0;
   }
 };
 
