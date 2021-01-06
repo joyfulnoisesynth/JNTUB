@@ -17,25 +17,26 @@
   ==============================================================================
 
   Project:     JoyfulNoise D-RAND
-  File:        D-RAND.ino
+  File:        D-RAND.h
   Description: 4HP Voltage-Controlled Random Generator
-
-  Arduino sketch for D-RAND.
 
  */
 
-#include "D-RAND.h"
+#ifndef D_RAND_H
+#define D_RAND_H
 
-D_RandModule module;
+// JoyfulNoise Tiny Utility Board Library
+#include <JNTUB.h>
 
-void setup()
-{
-  JNTUB::Device::setUpDevice();
-  module.setup();
-}
+class D_RandModule : public JNTUB::Module {
+public:
+  D_RandModule();
+  void setup() override;
+  uint8_t loop(const JNTUB::Environment &env) override;
 
-void loop()
-{
-  uint8_t output = module.loop(JNTUB::Device::getEnvironment());
-  JNTUB::Device::writeOutput(output);
-}
+private:
+  // Implementation details hidden behind opaque pointer.
+  class D_Rand *mImpl;
+};
+
+#endif //D_RAND_H
