@@ -37,12 +37,8 @@
   PARAM 2 - High
     Sets the upper bound of the random output.
 
-  PARAM 3 - Bias
-    Biases the output towards either end of the configured output range.
-      - 12 o'clock = voltages evenly distributed between Low and High
-      - All the way left = always outputs Low
-      - All the way right = always outputs High
-
+  PARAM 3 - Slew
+    Adds digital slew to the output values.
 
   GATE/TRG - Trigger New Value
 
@@ -60,18 +56,32 @@
 #include <JNTUB.h>
 
 JNTUB::EdgeDetector trigger;
-uint8_t output;
+
+const uint16_t SLEW_RATE_CURVE[] = {
+  0,  // no slew
+  150,  // 150ms slew
+  1000,  // 1s slew
+};
+JNTUB::CurveKnob<uint16_t> slewRateKnob(SLEW_RATE_CURVE, NELEM(SLEW_RATE_CURVE));
+
+// Used to time the slew
+JNTUB::Stopwatch stopwatch;
+
+uint8_t prevVal;
+uint8_t targetVal;
 
 void setup()
 {
   JNTUB::setUpFastPWM();
-  output = 128;
+  prevVal = 128;
+  targetVal = 128;
 }
 
 void loop()
 {
-  bool trgIn = digitalRead(JNTUB::PIN_GATE_TRG);
-  trigger.update(trgIn);
+  stopwatch.update(millis());
+  trigger.update(digitalRead(JNTUB::PIN_GATE_TRG));
+  slewRateKnob.update(analogRead(JNTUB::PIN_PARAM3));
 
   uint16_t lowRaw = analogRead(JNTUB::PIN_PARAM1);
   uint16_t highRaw = analogRead(JNTUB::PIN_PARAM2);
@@ -84,20 +94,20 @@ void loop()
     low = high;
 
   if (trigger.isRising()) {
-    int unbiased = random(low, high);
-
-    uint16_t biasRaw = analogRead(JNTUB::PIN_PARAM3);
-    int16_t biasScaled = map(biasRaw, 0, 1023, -256, 255);
-
-    // Pick a random number between 0 and bias to add to the generated value
-    int bias;
-    if (biasScaled < 0)
-      bias = random(biasScaled, 0);
-    else
-      bias = random(0, biasScaled);
-
-    output = (uint8_t)(unbiased + bias);
+    prevVal = targetVal;
+    targetVal = random(low, high);
+    stopwatch.reset();
   }
 
-  JNTUB::analogWriteOut(output);
+  uint16_t slewTimeMs = slewRateKnob.getValue();
+  uint32_t timeSinceLastTrg = stopwatch.getTime();
+
+  if (slewTimeMs == 0 || timeSinceLastTrg >= slewTimeMs) {
+    JNTUB::analogWriteOut(targetVal);
+  } else {
+    // Continue slewing to target value
+    uint8_t currentVal = map(
+        timeSinceLastTrg, 0, slewTimeMs, prevVal, targetVal);
+    JNTUB::analogWriteOut(currentVal);
+  }
 }
