@@ -379,7 +379,8 @@ Clock::Clock(uint32_t period)
 {
   mPeriod = period;
   mDuty = (uint8_t)(PHASE_MAX / 2);
-  stop();
+  mCurPhase = 0;
+  mRunning = false;
 }
 
 uint32_t Clock::getPeriod() const
@@ -421,21 +422,15 @@ bool Clock::isFalling() const
 void Clock::start()
 {
   mRunning = true;
-  // Reset to start of period
-  sync(0);
 }
 
 void Clock::stop()
 {
   mRunning = false;
-  mCurPhase = 0;
 }
 
 void Clock::sync(uint8_t phase)
 {
-  if (!mRunning)
-    return;
-
   mCurPhase = phase;
 
   // Adjust the start time of the current period, otherwise updates will
