@@ -31,21 +31,14 @@
 #include <avr/io.h>
 #include <Arduino.h>
 
+// The library is also implemented for ATmega328p so I can test Arduino Uno.
 #if defined(__AVR_ATtiny85__)
-#define DEBUG(...)
 #elif defined(__AVR_ATmega328P__) || defined(__AVR_ATmega328__)
-static char DEBUGBUF[256];
-#define DEBUG(...) ({ \
-    int len = snprintf(DEBUGBUF, sizeof(DEBUGBUF), ...); \
-    Serial.write(DEBUGBUF, len); \
-})
 #else
 #error This AVR board is not supported
 #endif
 
 namespace JNTUB {
-
-namespace Device {
 
 /**
  * ===========================================================================
@@ -74,44 +67,39 @@ namespace Device {
 
 #endif
 
-static void setUpFastPWM();
-
-void setUpDevice()
+// The PWM generator is always running, but its output is not connected
+// to any pin on the MCU unless the proper bit(s) is/are set.
+static inline void enablePwmOutput()
 {
-  setUpFastPWM();
+#if defined(__AVR_ATtiny85__)
+  // Timer/Counter1 control status register TCCR1
+  // Bit COM1A1 high: PWM generator output is connected to OC1A pin
+  // Bit COM1A1 low: PWM generator output is disconnected from OC1A pin
+  bitSet(TCCR1, COM1A1);
+#elif defined(__AVR_ATmega328P__) || defined(__AVR_ATmega328__)
+  // Timer/Counter1 control status register TCCR1A
+  // Bit COM1A1 high: PWM generator output is connected to OC1A pin
+  // Bit COM1A1 low: PWM generator output is disconnected from OC1A pin
+  bitSet(TCCR1A, COM1A1);
+#endif
+
+  // Need to also make sure pin is in output mode.
+  pinMode(PIN_OUT, OUTPUT);
 }
 
-Environment getEnvironment()
+static inline void disablePwmOutput()
 {
-  Environment env;
-  env.tMillis = millis();
-  env.tMicros = micros();
-  env.param1 = analogRead(PIN_PARAM1);
-  env.param2 = analogRead(PIN_PARAM2);
-  env.param3 = analogRead(PIN_PARAM3);
-  env.gateTrg = digitalRead(PIN_GATE_TRG);
-  return env;
-}
-
-// The PWM generator is always running, but that does not necessarily mean
-// that the PWM signal is being written to PIN_OUT all the time.
-// Certain registers have to be set in order for the PWM signal to affect
-// the state of a pin.
-static bool pwmOutputEnabled = false;
-static void enablePwmOutput();
-static void disablePwmOutput();
-
-static void digitalWriteOut(bool value);
-static void analogWriteOut(uint8_t value);
-
-void writeOutput(uint8_t value)
-{
-  if (value == 0)
-    digitalWriteOut(0);
-  else if (value == 255)
-    digitalWriteOut(1);
-  else
-    analogWriteOut(value);
+#if defined(__AVR_ATtiny85__)
+  // Timer/Counter1 control status register TCCR1
+  // Bit COM1A1 high: PWM generator output is connected to OC1A pin
+  // Bit COM1A1 low: PWM generator output is disconnected from OC1A pin
+  bitClear(TCCR1, COM1A1);
+#elif defined(__AVR_ATmega328P__) || defined(__AVR_ATmega328__)
+  // Timer/Counter1 control status register TCCR1A
+  // Bit COM1A1 high: PWM generator output is connected to OC1A pin
+  // Bit COM1A1 low: PWM generator output is disconnected from OC1A pin
+  bitClear(TCCR1A, COM1A1);
+#endif
 }
 
 void digitalWriteOut(bool value)
@@ -130,66 +118,30 @@ void analogWriteOut(uint8_t value)
   enablePwmOutput();
 }
 
-void enablePwmOutput()
-{
-#if defined(__AVR_ATtiny85__)
-  // Timer/Counter1 control status register TCCR1
-  // Bit COM1A1 high: PWM generator output is connected to OC1A pin
-  // Bit COM1A1 low: PWM generator output is disconnected from OC1A pin
-  bitSet(TCCR1, COM1A1);
-#elif defined(__AVR_ATmega328P__) || defined(__AVR_ATmega328__)
-  // Timer/Counter1 control status register TCCR1A
-  // Bit COM1A1 high: PWM generator output is connected to OC1A pin
-  // Bit COM1A1 low: PWM generator output is disconnected from OC1A pin
-  bitSet(TCCR1A, COM1A1);
-#endif
-
-  // Need to also make sure pin is in output mode.
-  pinMode(PIN_OUT, OUTPUT);
-}
-
-void disablePwmOutput()
-{
-#if defined(__AVR_ATtiny85__)
-  // Timer/Counter1 control status register TCCR1
-  // Bit COM1A1 high: PWM generator output is connected to OC1A pin
-  // Bit COM1A1 low: PWM generator output is disconnected from OC1A pin
-  bitClear(TCCR1, COM1A1);
-#elif defined(__AVR_ATmega328P__) || defined(__AVR_ATmega328__)
-  // Timer/Counter1 control status register TCCR1A
-  // Bit COM1A1 high: PWM generator output is connected to OC1A pin
-  // Bit COM1A1 low: PWM generator output is disconnected from OC1A pin
-  bitClear(TCCR1A, COM1A1);
-#endif
-}
-
 /**
- * OK, ALL ABOUT FAST PWM
- * ----------------------
- * I will improve this explanation, I'm tired right now.
+ * MORE DETAIL ON GETTING FASTER PWM
+ * ---------------------------------
  *
  * Most (if not all) AVR boards have at least two Timer/Counters.
  *
- * The whole reason I need a custom implementation of analogWrite is
- * because Arduino's implementation chooses to base its PWM output on
- * Timer/Counter0, the same timer which the Arduino library relies upon for
- * timing functions like millis() and micros(). One way I could increase
- * the PWM frequency is to decrease the prescaler on Timer/Counter0 from 64
- * down to 1, but that would make functions like millis() and micros()
- * completely inaccurate. That's lame.
+ * Arduino's implementation chooses to base its PWM output on Timer/Counter0,
+ * the same timer which the Arduino library relies upon for timing functions
+ * like millis() and micros(). One way I could increase the PWM frequency is to
+ * decrease the prescaler on Timer/Counter0 from 64 down to 1, but that would
+ * make functions like millis() and micros() completely inaccurate. That's lame.
  *
- * Furthermore, Timer/Counter0 is locked to only 8MHz on ATtiny85 (that's the
- * speed of the internal oscillator). In Fast PWM mode, every PWM period
- * lasts exactly 256 counts, so 8MHz / 256 = maximum 31.25kHz PWM frequency.
- * Unless I were to set my PWM filter cutoff to something as low as 1kHz,
- * the output signal would have unavoidable jitter that could cause weird
- * audio artifacts.
+ * Furthermore, Timer/Counter0 is locked to only 8MHz on ATTiny85 (that's the
+ * speed of the internal oscillator). Every PWM period lasts exactly 256 counts,
+ * so 8MHz / 256 = maximum 31.25kHz PWM frequency. Unless I were to set my PWM
+ * filter cutoff to something as low as 1kHz, the output signal would have
+ * unavoidable jitter that could cause weird audio artifacts.
  *
  * The solution to all these problems is to use Timer/Counter1 for PWM.
  * This has two great benefits:
  *
  *  - Timer/Counter0's prescaler remains unaffected, so I can use Arduino
- *    library functions to accurately keep time (which is important for music).
+ *    library functions to accurately keep time (which is important for
+ *    some modules).
  *
  *  - On ATtiny85, Timer/Counter1 can have its clock source set to the internal
  *    PLL (phase-locked loop) generator rather than the 8MHz system clock. This
@@ -204,7 +156,6 @@ void disablePwmOutput()
 
 void setUpFastPWM()
 {
-  /* TODO: make fast PWM work for ATmega328p and ATtiny85 */
 #if defined(__AVR_ATtiny85__)
 
   // Enable PLL
@@ -233,10 +184,10 @@ void setUpFastPWM()
   // so that'll be only 62.5kHz PWM. Oh well, it's just for testing.
 
   // ATmega328p's Timer/Counter1 has more PWM modes than that of the ATTiny85.
-  // The ATTiny85 only has one PWM mode, and it's equivalent on ATmega328p is
+  // The ATTiny85 only has one PWM mode, and its equivalent on ATmega328p is
   // "Fast PWM mode."
   // Also, ATmega328's Timer/Counter1 is a 16-bit counter, so we'll need to
-  // specify that we only want 8 bit 
+  // specify that we only want 8 bit PWM.
   // Both of these things are set via the WGM1[3:0] bits of TCCR1A/TCCR1B
   //    WMG1[3:0] = 0101 --> Fast PWM, 8-bit
 
@@ -253,8 +204,6 @@ void setUpFastPWM()
 
 #endif
 }
-
-} //JNTUB::Device
 
 /**
  * ===========================================================================

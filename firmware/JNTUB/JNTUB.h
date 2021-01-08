@@ -35,7 +35,7 @@ namespace JNTUB {
 
   /*
    * =======================================================================
-   * INPUTS AND OUTPUT
+   *                         INPUTS AND OUTPUT
    * =======================================================================
    *
    * All modules based on the JoyfulNoise Tiny Utility Board have the same
@@ -65,46 +65,30 @@ namespace JNTUB {
    * (*) OUT can be used as either a PWM analog output or a digital output.
    */
 
-  /**
-   * Contains all information needed to run a JNTUB-based module.
-   * This abstraction allows JNTUB firmwares to theoretically run on any
-   * platform (e.g., perhaps on VCVRack soon??).
-   */
-  struct Environment {
-    // Execution environment
-    uint32_t tMillis;
-    uint32_t tMicros;
-
-    // Module parameters
-    uint16_t param1;  // 0 to 1023
-    uint16_t param2;  // 0 to 1023
-    uint16_t param3;  // 0 to 1023
-    bool gateTrg;     // 0 or 1
-  };
+  extern const uint8_t PIN_PARAM1;
+  extern const uint8_t PIN_PARAM2;
+  extern const uint8_t PIN_PARAM3;
+  extern const uint8_t PIN_GATE_TRG;
+  extern const uint8_t PIN_OUT;
 
   /**
-   * Inherit from this interface to implement a JNTUB-based module.
+   * =======================================================================
+   * PWM OUTPUT
+   * =======================================================================
+   *
+   * JNTUB uses Pulse-Width Modulation to generate an "analog" output signal
+   * from the ATTiny. Unfortunately, the Arduino analogWrite() function
+   * utilizes a PWM generator that runs off a slow-running internal timer,
+   * so it only achieves ~500 Hz PWM. That's totally unusable for audio,
+   * and not really acceptable for clean CV output either.
+   *
+   * Luckily, the ATTiny has a second timer which can generate a much higher
+   * PWM frequency (250 kHz). Setting that up requires some low-level register
+   * manipulation, and using it requires us to write our own analogWrite().
    */
-  class Module {
-  public:
-    // Called once upon module powerup.
-    virtual void setup() = 0;
-
-    // Called endlessly in a loop.
-    // Returns the analog value to write out to the module output.
-    virtual uint8_t loop(const Environment &env) = 0;
-  };
-
-  namespace Device {
-
-    // Depending on the software platform on which the module runs,
-    // acquiring the input parameters / execution environment and producing
-    // the output will work differently. These interfaces abstract that away.
-    void setUpDevice();
-    Environment getEnvironment();
-    void writeOutput(uint8_t value);
-
-  }  //JNTUB::Device
+  void setUpFastPWM();  // call once during setup()
+  void analogWriteOut(uint8_t value);
+  void digitalWriteOut(bool value);
 
   /*
    * =======================================================================

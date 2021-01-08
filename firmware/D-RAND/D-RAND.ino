@@ -20,22 +20,84 @@
   File:        D-RAND.ino
   Description: 4HP Voltage-Controlled Random Generator
 
-  Arduino sketch for D-RAND.
+  The JoyfulNoise D-RAND is an 8-bit random voltage generator. On every trigger
+  received, a new random voltage is generated between some Low and High bounds.
+  These Low and High bounds range from -5V to 5V and are voltage-controllable.
+
+  Many thanks to Ross Fish at Moffenzeef Modular for designing the Deviant
+  module which inspired this.
+
+  ----------
+  PARAMETERS
+  ----------
+
+  PARAM 1 - Low
+    Sets the lower bound of the random output.
+
+  PARAM 2 - High
+    Sets the upper bound of the random output.
+
+  PARAM 3 - Bias
+    Biases the output towards either end of the configured output range.
+      - 12 o'clock = voltages evenly distributed between Low and High
+      - All the way left = always outputs Low
+      - All the way right = always outputs High
+
+
+  GATE/TRG - Trigger New Value
+
+  -----
+  JNTUB
+  -----
+
+  D-RAND is based on the JoyfulNoise Tiny Utility Board (JNTUB), a
+  reprogrammable 4HP module with a standard set of inputs and one 8-bit
+  analog output.
 
  */
 
-#include "D-RAND.h"
+// JoyfulNoise Tiny Utility Board Library
+#include <JNTUB.h>
 
-D_RandModule module;
+JNTUB::EdgeDetector trigger;
+uint8_t output;
 
 void setup()
 {
-  JNTUB::Device::setUpDevice();
-  module.setup();
+  JNTUB::setUpFastPWM();
+  output = 128;
 }
 
 void loop()
 {
-  uint8_t output = module.loop(JNTUB::Device::getEnvironment());
-  JNTUB::Device::writeOutput(output);
+  bool trgIn = digitalRead(JNTUB::PIN_GATE_TRG);
+  trigger.update(trgIn);
+
+  uint16_t lowRaw = analogRead(JNTUB::PIN_PARAM1);
+  uint16_t highRaw = analogRead(JNTUB::PIN_PARAM2);
+
+  uint8_t low = map(lowRaw, 0, 1023, 0, 255);
+  uint8_t high = map(highRaw, 0, 1023, 0, 255);
+
+  // Prevent low from being greater than high
+  if (low > high)
+    low = high;
+
+  if (trigger.isRising()) {
+    int unbiased = random(low, high);
+
+    uint16_t biasRaw = analogRead(JNTUB::PIN_PARAM3);
+    int16_t biasScaled = map(biasRaw, 0, 1023, -256, 255);
+
+    // Pick a random number between 0 and bias to add to the generated value
+    int bias;
+    if (biasScaled < 0)
+      bias = random(biasScaled, 0);
+    else
+      bias = random(0, biasScaled);
+
+    output = (uint8_t)(unbiased + bias);
+  }
+
+  JNTUB::analogWriteOut(output);
 }

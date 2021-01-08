@@ -1,9 +1,9 @@
 JNTUB	KEYWORD1
-Environment	KEYWORD1
-Module	KEYWORD1
-Device  KEYWORD1
-setUpDevice	KEYWORD2
-getEnvironment	KEYWORD2
-writeOutput	KEYWORD2
+setUpFastPWM	KEYWORD2
+analogWriteOut	KEYWORD2
+digitalWriteOut	KEYWORD2
 DiscreteKnob	KEYWORD1
+CurveKnob	KEYWORD1
+EdgeDetector	KEYWORD1
+Stopwatch	KEYWORD1
 Clock	KEYWORD1
