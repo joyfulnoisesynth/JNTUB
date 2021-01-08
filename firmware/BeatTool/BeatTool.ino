@@ -430,17 +430,19 @@ private:
   bool mPrevState;
 
 public:
-  ClockMultiplier(const ClockT *clkIn, uint8_t mult=1)
+  ClockMultiplier(const ClockT *clkIn)
   {
     mClkIn = clkIn;
-    mMult = mult;
-    mCurPhase = 0;
-    mPrevState = 0;
   }
 
   void setMultiplier(uint8_t mult)
   {
     mMult = mult;
+  }
+  void initialize()
+  {
+    mCurPhase = 0;
+    mPrevState = 0;
   }
   uint8_t getDuty() const
   {
@@ -490,18 +492,20 @@ public:
   bool mPrevState;
 
 public:
-  ClockDivider(const ClockT *clkIn, uint8_t div=1)
+  ClockDivider(const ClockT *clkIn)
   {
     mClkIn = clkIn;
-    mDiv = div;
-    mCurPhase = 0;
-    mPrevState = 0;
-    mNumEdges = mDiv * 2;
   }
 
   void setDivisor(uint8_t div)
   {
     mDiv = div;
+  }
+  void initialize()
+  {
+    mCurPhase = 0;
+    mPrevState = 0;
+    mNumEdges = mDiv * 2;
   }
   uint8_t getDuty() const
   {
@@ -536,10 +540,10 @@ public:
     if (mNumEdges >= mDiv * 2)
       mNumEdges = 0;
 
-    uint8_t phasePerInputHalfPeriod = JNTUB::Clock::PHASE_MAX / mDiv / 2;
-    uint8_t phaseAccumulatedFromEdges = mNumEdges * phasePerInputHalfPeriod;
+    uint8_t phaseAccumulatedFromEdges =
+        mNumEdges * JNTUB::Clock::PHASE_MAX / mDiv / 2;
     uint8_t currentPhaseInInputHalfPeriod =
-      mClkIn->getPhase() % (JNTUB::Clock::PHASE_MAX / 2);
+        mClkIn->getPhase() % (JNTUB::Clock::PHASE_MAX / 2);
     mCurPhase =
       phaseAccumulatedFromEdges + (currentPhaseInInputHalfPeriod / mDiv);
   }
@@ -567,6 +571,8 @@ private:
 
   Multiplier multiplier;
 
+  bool initialized;
+
   const int TEST_CLK_OUT = 7;
 
 public:
@@ -580,7 +586,8 @@ public:
   void setup()
   {
     multiplier = {1, 1};
-    clockFollower.start();
+
+    initialized = false;
   }
 
   bool loop(
@@ -592,6 +599,22 @@ public:
     clkEdge.update(clkIn);
     periodTimer.update(time);
 
+    // Select the desired multiplier
+    uint8_t range = rangeKnob.getValue();
+    uint8_t rate = rateKnob.getValue();
+    multiplier = MULTIPLIERS[range][rate];
+    if (divide)
+      multiplier = multiplier.reciprocal();
+
+    clkMultiplier.setMultiplier(multiplier.numerator);
+    clkDivider.setDivisor(multiplier.denominator);
+
+    if (!initialized) {
+      clkMultiplier.initialize();
+      clkDivider.initialize();
+      initialized = true;
+    }
+
     // Sync the clock follower up on every clock transition
     if (clkEdge.isRising()) {
       // Update period estimate and reset timer
@@ -602,21 +625,22 @@ public:
       clockFollower.sync(clockFollower.getDuty());
     }
 
+    // If divide mode, and if the divisor is a whole number,
+    // then stop the clock follower from running, and solely rely
+    // on the clock edge transitions. If the clock follower keeps running,
+    // it could outpace the actual incoming clock edges and lead to
+    // inexact clock division.
+    if (divide && multiplier.numerator == 1)
+      clockFollower.stop();
+    else
+      clockFollower.start();
+
     digitalWrite(TEST_CLK_OUT, clockFollower.getState());
 
-    // Select the desired multiplier
-    uint8_t range = rangeKnob.getValue();
-    uint8_t rate = rateKnob.getValue();
-    this->multiplier = MULTIPLIERS[range][rate];
-    if (divide)
-      this->multiplier = this->multiplier.reciprocal();
-
-    clkMultiplier.setMultiplier(this->multiplier.numerator);
     clkMultiplier.update();
-    clkDivider.setDivisor(this->multiplier.denominator);
     clkDivider.update();
 
-    return clkDivider.getState() ? 255 : 0;
+    return clkDivider.getState();
   }
 
   void debug()
