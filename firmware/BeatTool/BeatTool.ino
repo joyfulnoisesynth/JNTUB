@@ -60,8 +60,10 @@
 #define HYSTERESIS_AMT 5
 
 #if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega328__)
+#define DEBUGINIT() Serial.begin(115200)
 #define DEBUG(...) Serial.print(__VA_ARGS__)
 #else
+#define DEBUGINIT()
 #define DEBUG(...)
 #endif
 
@@ -78,9 +80,8 @@
  * ------------------
  *
  * PARAM 1: Rate
- *    Controls the frequency of the generated clock. The range of frequencies
- *    follows a piecewise-linear exponential approximation curve defined by
- *    CLOCK_RATE_CURVES.
+ *    Controls the frequency of the generated clock. Sweeps linearly
+ *    through a range of frequencies set by Range.
  *
  * PARAM 2: Range
  *    Controls the range of values that the Rate input sweeps through.
@@ -89,69 +90,131 @@
  *    Immediately resets the clock to the beginning of its cycle.
  */
 
-const uint32_t CLOCK_RATE_CURVES[][3] = {
-  { // LFO range
-    10000000, // 10s
-    3000000,  // 3s
-    1000000,  // 1s
-  },
-  { // Slow musical tempos
-    2000000,  // 2s (30 bpm)
-    1000000,  // 1s (60bpm)
-    666000 // 90 bpm
-  },
-  { // Musical tempos
-    1000000,  // 1s period (60bpm)
-    600000,       // 600ms period (~100bpm)
-    333000        // 250ms period (180bpm)
-  },
-  { // Fast musical tempos
-    333000,       // 180 bpm
-    250000,       // 240 bpm
-    166000        // 360 bpm
-  },
-  { // Audible range
-    250000,  // 40 Hz
-    2273,    // ~440 Hz
-    1000     // 1 kHz
-  }
+struct Range {
+  uint16_t low;
+  uint16_t high;
 };
+
+// These ranges allow for more precise tuning of a clock by hand,
+// but the difference from one range to the next does not have any
+// nice musical properties, so CV control of the Range is probably
+// not desired.
+
+const Range CLOCK_RANGES_PRECISE[] = {
+
+  // 1 bpm to 10 bpm
+  { 60000, 6000 },
+
+  // 10 bpm to 30 bpm
+  { 6000, 2000 },
+
+  // 30 bpm to 60 bpm
+  { 2000, 1000 },
+
+  // 60 bpm to 80 bpm
+  { 1000, 750 },
+
+  // 80 bpm to 100 bpm
+  { 750, 600 },
+
+  // 100 bpm to 120 bpm (MIDDLE)
+  { 600, 500 },
+
+  // 120 bpm to 150 bpm (MIDDLE)
+  { 500, 400 },
+
+  // 150 bpm to 180 bpm
+  { 400, 333 },
+
+  // 180 bpm to 240 bpm
+  { 333, 250 },
+
+  // 240 bpm to 360 bpm
+  { 250, 167 },
+
+  // 360 bpm to 600 bpm
+  { 167, 100 },
+
+  // 10 Hz to 100 Hz
+  { 100, 10 }
+
+};
+
+// These ranges make for a musically interesting clock generator
+// (rotating the range knob doubles or halves the clock frequency),
+// but it's harder to set a precise tempo since each range is larger.
+
+const Range CLOCK_RANGES_MUSICAL[] = {
+
+  // 16s to 8s
+  { 16383, 8192 },
+
+  // 8s to 4s
+  { 8191, 4096 },
+
+  // 4s to 2s
+  { 4095, 2048 },
+
+  // 29 bpm to 59 bpm
+  { 2047, 1024 },
+
+  // 59 bpm to 117 bpm (MIDDLE)
+  { 1023, 512 },
+
+  // 117 bpm to 234 bpm (MIDDLE)
+  { 511, 256 },
+
+  // 234 bpm to 469 bpm
+  { 255, 128 },
+
+  // 7.8 Hz to 15.6 Hz
+  { 127, 64 },
+
+  // 15.8 Hz to 31.2 Hz
+  { 63, 32 },
+
+  // 32.2 Hz to 62.5 Hz
+  { 31, 16 },
+
+  // 66.6 Hz to 125 Hz
+  { 15, 8 },
+};
+
+#define CLOCK_RANGES      CLOCK_RANGES_PRECISE
+#define NUM_CLOCK_RANGES  NELEM(CLOCK_RANGES)
 
 class ClockMode {
 private:
-  JNTUB::CurveKnob<uint32_t> rateKnob;
   JNTUB::DiscreteKnob rangeKnob;
   JNTUB::Clock clock;
-  bool prevSync;
-  uint32_t mTime;
+  JNTUB::EdgeDetector sync;
+
+  Range curRange;
 
 public:
   ClockMode()
-    : rateKnob(CLOCK_RATE_CURVES[0], NELEM(CLOCK_RATE_CURVES[0])),
-      rangeKnob(NELEM(CLOCK_RATE_CURVES), HYSTERESIS_AMT)
+    : rangeKnob(NUM_CLOCK_RANGES, HYSTERESIS_AMT)
   {}
 
   void setup()
   {
     clock.start();
-    prevSync = false;
   }
 
-  bool loop(uint32_t time, uint16_t rateIn, uint16_t rangeIn, bool syncIn)
+  bool loop(uint32_t tMillis, uint16_t rateIn, uint16_t rangeIn, bool syncIn)
   {
-    mTime = time;
-    rateKnob.update(rateIn);
     rangeKnob.update(rangeIn);
-    clock.update(time);
+    clock.update(tMillis);
+    sync.update(syncIn);
 
-    uint8_t whichCurve = rangeKnob.getValue();
-    rateKnob.setCurve(CLOCK_RATE_CURVES[whichCurve]);
-
-    if (syncIn && !prevSync)
+    if (sync.isRising())
       clock.sync();
-    prevSync = syncIn;
 
-    clock.setPeriod(rateKnob.getValue());
+    curRange = CLOCK_RANGES[rangeKnob.getValue()];
+
+    uint16_t rate = map(rateIn, 0, 1023, curRange.low, curRange.high);
+
+    clock.setPeriod(rate);
 
     return clock.getState();
   }
@@ -161,43 +224,16 @@ public:
     DEBUG(">>>CLOCK MODE");
 
     DEBUG(", rate=");
-    DEBUG(rateKnob.getValue(), DEC);
+    DEBUG(clock.getPeriod(), DEC);
 
-    DEBUG(", rateRaw=");
-    DEBUG(rateKnob.getValueRaw(), DEC);
+    DEBUG(", knob=");
+    DEBUG(rangeKnob.getValue(), DEC);
 
-    DEBUG(", time=");
-    DEBUG(mTime, DEC);
-
-    DEBUG('\n');
-    DEBUG("        knob");
-
-    DEBUG(", n=");
-    DEBUG(rateKnob.mSegmentKnob.mMaxVal + 1, DEC);
-
-    DEBUG(", val=");
-    DEBUG(rateKnob.mSegmentKnob.mCurVal, DEC);
-
-    DEBUG(", valRaw=");
-    DEBUG(rateKnob.mSegmentKnob.mCurValRaw, DEC);
-
-    DEBUG(", step=");
-    DEBUG(rateKnob.mSegmentKnob.mStep, DEC);
-
-    DEBUG(", lower=");
-    DEBUG(rateKnob.mSegmentKnob.mCurLower, DEC);
-
-    DEBUG(", upper=");
-    DEBUG(rateKnob.mSegmentKnob.mCurUpper, DEC);
-
-    DEBUG(", inner=");
-    DEBUG(rateKnob.mSegmentKnob.mapInnerValue(0, 99), DEC);
-
-    DEBUG(", curve[a]=");
-    DEBUG(rateKnob.mCurve[rateKnob.mSegmentKnob.mCurVal], DEC);
-
-    DEBUG(", curve[b]=");
-    DEBUG(rateKnob.mCurve[rateKnob.mSegmentKnob.mCurVal+1], DEC);
+    DEBUG(", range=[");
+    DEBUG(curRange.low, DEC);
+    DEBUG(',');
+    DEBUG(curRange.high, DEC);
+    DEBUG(']');
 
     DEBUG('\n');
   }
@@ -224,24 +260,32 @@ public:
  *
  * PARAM 2: Repeats
  *    Varies the number of gates that are generated in a burst.
- *    The available values are defined by BURST_REPEATS.
+ *    The available values are defined by BURST_REPEAT_OPTIONS.
  *
  * GATE/TRG: Trigger Burst
  */
 
 const uint8_t BURST_REPEAT_OPTIONS[] = {
-  1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 16
+  1, 2,  3,  4,  5,  6,  7,  8,
+  9, 10, 11, 12, 13, 14, 15, 16
 };
 
-const uint32_t BURST_RATE_CURVE[] = {
-  100000,  // 0.1 second period
-  1000000  // 1 second period
+const uint16_t BURST_RATE_CURVE[] = {
+  1000,  // 1/16 note at 15 bpm
+  500,  // 1/16 note at 30 bpm
+  250,   // 1/16 note at 60 bpm
+  187,   // 1/16 note at 80 bpm
+  150,   // 1/16 note at 100 bpm
+  125,   // 1/16 note at 120 bpm
+  100,   // 1/16 note at 150 bpm
+  83,    // 1/16 note at 180 bpm
+  62,    // 1/16 note at 240 bpm
 };
 
 class BurstMode {
 private:
   JNTUB::DiscreteKnob repeatKnob;
-  JNTUB::CurveKnob<uint32_t> rateKnob;
+  JNTUB::CurveKnob<uint16_t> rateKnob;
   JNTUB::Clock clock;
   JNTUB::EdgeDetector trigger;
   uint8_t numGatesSent;
@@ -255,13 +299,14 @@ public:
   void setup()
   {
     numGatesSent = 0;
+    clock.sync(128);  // set clock low
   }
 
-  bool loop(uint32_t time, uint16_t rateIn, uint16_t repeatsIn, bool trgIn)
+  bool loop(uint32_t tMillis, uint16_t rateIn, uint16_t repeatsIn, bool trgIn)
   {
     rateKnob.update(rateIn);
     repeatKnob.update(repeatsIn);
-    clock.update(time);
+    clock.update(tMillis);
     trigger.update(trgIn);
 
     // Update rate
@@ -270,23 +315,34 @@ public:
 
     // Start a new burst on trigger
     if (trigger.isRising()) {
-      clock.start();
       numGatesSent = 0;
+      clock.sync();
+      clock.start();
     }
 
     if (clock.isFalling())
       ++numGatesSent;
 
     // Check if burst done
-    uint8_t repeatOpt = repeatKnob.getValue();
-    uint8_t numRepeats = BURST_REPEAT_OPTIONS[repeatOpt];
-
-    if (numGatesSent >= numRepeats) {
+    uint8_t repeats = BURST_REPEAT_OPTIONS[repeatKnob.getValue()];
+    if (numGatesSent >= repeats) {
       clock.stop();
-      numGatesSent = 0;
     }
 
     return clock.getState();
+  }
+
+  void debug()
+  {
+    DEBUG(">>>BURST MODE");
+
+    DEBUG(", rate=");
+    DEBUG(clock.getPeriod(), DEC);
+
+    DEBUG(", repeats=");
+    DEBUG(BURST_REPEAT_OPTIONS[repeatKnob.getValue()], DEC);
+
+    DEBUG('\n');
   }
 };
 
@@ -609,6 +665,8 @@ uint32_t lastReport;
 
 void setup()
 {
+  DEBUGINIT();
+
   clockMode.setup();
   burstMode.setup();
   multiplyMode.setup();
@@ -622,7 +680,8 @@ void loop()
   uint16_t rangeRptIn = analogRead(JNTUB::PIN_PARAM2);
   uint16_t rateIn = analogRead(JNTUB::PIN_PARAM1);
   bool gateIn = digitalRead(JNTUB::PIN_GATE_TRG);
-  uint32_t time = micros();
+  uint32_t tMillis = millis();
+  uint32_t tMicros = micros();
 
   modeKnob.update(modeIn);
   uint8_t mode = modeKnob.getValue();
@@ -631,34 +690,36 @@ void loop()
   switch(mode) {
     case 0:
       output = multiplyMode.loop(
-          time, rateIn, rangeRptIn, gateIn, true /* divide */);
+          tMicros, rateIn, rangeRptIn, gateIn, true /* divide */);
       break;
     case 1:
       output = multiplyMode.loop(
-          time, rateIn, rangeRptIn, gateIn, false /* multiply */);
+          tMicros, rateIn, rangeRptIn, gateIn, false /* multiply */);
       break;
     case 2:
-      output = burstMode.loop(time, rateIn, rangeRptIn, gateIn);
+      output = burstMode.loop(tMillis, rateIn, rangeRptIn, gateIn);
       break;
     case 3:
-      output = clockMode.loop(time, rateIn, rangeRptIn, gateIn);
+      output = clockMode.loop(tMillis, rateIn, rangeRptIn, gateIn);
       break;
     default:
       break;
   };
 
-  if (time - lastReport >= REPORT_RATE) {
-    lastReport = time;
-    Serial.println(mode);
+  if (tMicros - lastReport >= REPORT_RATE) {
+    lastReport = tMicros;
+    DEBUG(mode, DEC);
     switch(mode) {
       case 0:
       case 1:
         multiplyMode.debug();
         break;
+      case 2:
+        burstMode.debug();
+        break;
       case 3:
         clockMode.debug();
         break;
-      case 2:
       default:
         break;
     }
