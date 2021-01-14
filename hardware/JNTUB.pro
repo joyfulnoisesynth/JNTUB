@@ -1,4 +1,4 @@
-update=Tuesday, January 05, 2021 at 10:56:50 PM
+update=Sunday, January 17, 2021 at 08:04:53 PM
 version=1
 last_client=kicad
 [cvpcb]
@@ -9,16 +9,6 @@ version=1
 [eeschema]
 version=1
 LibDir=
-[schematic_editor]
-version=1
-PageLayoutDescrFile=
-PlotDirectoryName=
-SubpartIdSeparator=0
-SubpartFirstId=65
-NetFmtName=Pcbnew
-SpiceAjustPassiveValues=0
-LabSize=60
-ERC_TestSimilarLabels=1
 [pcbnew]
 version=1
 PageLayoutDescrFile=
@@ -38,11 +28,14 @@ MinHoleToHole=0.5
 TrackWidth1=0.4064
 TrackWidth2=0.2032
 TrackWidth3=0.254
-TrackWidth4=0.4064
-TrackWidth5=0.508
-TrackWidth6=0.6096
-TrackWidth7=0.762
-TrackWidth8=1.016
+TrackWidth4=0.3048
+TrackWidth5=0.4064
+TrackWidth6=0.508
+TrackWidth7=0.6096
+TrackWidth8=0.762
+TrackWidth9=1.016
+TrackWidth10=1.27
+TrackWidth11=1.524
 ViaDiameter1=0.762
 ViaDrill1=0.4064
 ViaDiameter2=0.6096
@@ -253,6 +246,17 @@ dPairWidth=0.2032
 dPairGap=0.25
 dPairViaGap=0.25
 [pcbnew/Netclasses/1]
+Name=Ground
+Clearance=0.508
+TrackWidth=1.27
+ViaDiameter=1.016
+ViaDrill=0.6096
+uViaDiameter=0.6
+uViaDrill=0.4
+dPairWidth=0.2032
+dPairGap=0.25
+dPairViaGap=0.25
+[pcbnew/Netclasses/2]
 Name=Medium
 Clearance=0.3048
 TrackWidth=0.3048
@@ -263,9 +267,9 @@ uViaDrill=0.4
 dPairWidth=0.2032
 dPairGap=0.25
 dPairViaGap=0.25
-[pcbnew/Netclasses/2]
+[pcbnew/Netclasses/3]
 Name=Power
-Clearance=0.508
+Clearance=0.4064
 TrackWidth=0.6096
 ViaDiameter=0.762
 ViaDrill=0.4064
@@ -274,7 +278,7 @@ uViaDrill=0.4
 dPairWidth=0.2032
 dPairGap=0.25
 dPairViaGap=0.25
-[pcbnew/Netclasses/3]
+[pcbnew/Netclasses/4]
 Name=Small
 Clearance=0.3048
 TrackWidth=0.254
@@ -285,7 +289,7 @@ uViaDrill=0.4
 dPairWidth=0.2032
 dPairGap=0.25
 dPairViaGap=0.25
-[pcbnew/Netclasses/4]
+[pcbnew/Netclasses/5]
 Name=Small and Close
 Clearance=0.254
 TrackWidth=0.254
@@ -296,3 +300,13 @@ uViaDrill=0.4
 dPairWidth=0.2032
 dPairGap=0.25
 dPairViaGap=0.25
+[schematic_editor]
+version=1
+PageLayoutDescrFile=
+PlotDirectoryName=
+SubpartIdSeparator=0
+SubpartFirstId=65
+NetFmtName=Pcbnew
+SpiceAjustPassiveValues=0
+LabSize=50
+ERC_TestSimilarLabels=1
