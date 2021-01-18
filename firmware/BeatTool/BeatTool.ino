@@ -426,6 +426,7 @@ class ClockMultiplier {
 private:
   const ClockT *mClkIn;
   uint8_t mMult;
+  uint8_t mMultNext;
   uint8_t mCurPhase;
   bool mPrevState;
 
@@ -437,10 +438,12 @@ public:
 
   void setMultiplier(uint8_t mult)
   {
-    mMult = mult;
+    // copy this to mMult at start of next input period
+    mMultNext = mult;
   }
   void initialize()
   {
+    mMult = mMultNext;
     mCurPhase = 0;
     mPrevState = 0;
   }
@@ -470,6 +473,8 @@ public:
   {
     mPrevState = getState();
     mCurPhase = (mClkIn->getPhase() * mMult) % JNTUB::Clock::PHASE_MAX;
+    if (mClkIn->isRising())
+      mMult = mMultNext;
   }
 };
 
@@ -485,6 +490,7 @@ class ClockDivider {
 public:
   const ClockT *mClkIn;
   uint8_t mDiv;
+  uint8_t mDivNext;
   // How many edges have occurred in the input clock since the last edge
   // of the divided clock? Flip-flop the output every mDiv edges.
   uint8_t mNumEdges;
@@ -499,10 +505,12 @@ public:
 
   void setDivisor(uint8_t div)
   {
-    mDiv = div;
+    // copy this to mDiv at start of next input period
+    mDivNext = div;
   }
   void initialize()
   {
+    mDiv = mDivNext;
     mCurPhase = 0;
     mPrevState = 0;
     mNumEdges = mDiv * 2;
@@ -537,8 +545,10 @@ public:
       ++mNumEdges;
     }
 
-    if (mNumEdges >= mDiv * 2)
+    if (mNumEdges >= mDiv * 2) {
       mNumEdges = 0;
+      mDiv = mDivNext;
+    }
 
     uint8_t phaseAccumulatedFromEdges =
         mNumEdges * JNTUB::Clock::PHASE_MAX / mDiv / 2;
@@ -572,8 +582,6 @@ private:
   Multiplier multiplier;
 
   bool initialized;
-
-  const int TEST_CLK_OUT = 7;
 
 public:
   MultiplyMode()
@@ -634,8 +642,6 @@ public:
       clockFollower.stop();
     else
       clockFollower.start();
-
-    digitalWrite(TEST_CLK_OUT, clockFollower.getState());
 
     clkMultiplier.update();
     clkDivider.update();
