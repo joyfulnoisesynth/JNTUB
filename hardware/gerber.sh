@@ -1,5 +1,7 @@
 #!/bin/bash
 
+VERSION="v0.2"
+
 zip_files() {
 	SRC_DIR=$1
 	DST_DIR=$2
@@ -7,7 +9,7 @@ zip_files() {
 	mkdir $DST_DIR
 	cp $SRC_DIR/*.{gbr,drl} $DST_DIR/
 	pushd $DST_DIR
-	zip JNTUB_$SUBDIR_NAME.zip *.{gbr,drl}
+	zip JNTUB_${VERSION}_${SUBDIR_NAME}.zip *.{gbr,drl}
 	popd
 }
 
