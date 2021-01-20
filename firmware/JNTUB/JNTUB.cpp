@@ -50,8 +50,10 @@ namespace JNTUB {
 
 #if defined(__AVR_ATtiny85__)
 
-  const uint8_t PIN_PARAM1   = A1;  // ADC1, chip pin 7
-  const uint8_t PIN_PARAM2   = A2;  // ADC2, chip pin 3
+  /* const uint8_t PIN_PARAM1   = A1;  // ADC1, chip pin 7 */
+  /* const uint8_t PIN_PARAM2   = A2;  // ADC2, chip pin 3 */
+  const uint8_t PIN_PARAM1   = A2;  // ADC2, chip pin 3
+  const uint8_t PIN_PARAM2   = A1;  // ADC1, chip pin 7
   const uint8_t PIN_PARAM3   = A3;  // ADC3, chip pin 2
   const uint8_t PIN_GATE_TRG = 0;   // PB0, chip pin 5
   const uint8_t PIN_OUT      = 1;   // PB1/OC1A, chip pin 6
@@ -202,6 +204,46 @@ void setUpFastPWM()
   TCCR1A = 1<<WGM10;
   TCCR1B = 1<<WGM12 | 1<<CS10;
 
+#endif
+
+  enablePwmOutput();
+  pinMode(PIN_OUT, OUTPUT);
+}
+
+void setUpAudioInterrupt(SampleRate rate)
+{
+#if defined(__AVR_ATtiny85__)
+
+  TIMSK = 0;          // Timer interrupts OFF
+
+  TCCR0A = 3<<WGM00;  // Fast PWM
+  TCCR0B = 1<<WGM02;  // Overflow on TOP
+
+  switch(rate) {
+    case SAMPLE_RATE_40_KHZ:
+      TCCR0B |= 2<<CS00;  // 1/8 prescale
+      OCR0A = 24;         // Divide by 25 (8M / 8 / 25 = 40k)
+      break;
+    case SAMPLE_RATE_20_KHZ:
+      TCCR0B |= 2<<CS00;  // 1/8 prescale
+      OCR0A = 49;         // Divide by 50 (8M / 8 / 50 = 20k)
+      break;
+    case SAMPLE_RATE_10_KHZ:
+      TCCR0B |= 2<<CS00;  // 1/8 prescale
+      OCR0A = 99;         // Divide by 100 (8M / 8 / 100 = 10k)
+      break;
+    case SAMPLE_RATE_8_KHZ:
+      TCCR0B |= 2<<CS00;  // 1/8 prescale
+      OCR0A = 124;         // Divide by 125 (8M / 8 / 125 = 8k)
+      break;
+    default:
+      break;
+  }
+
+  TIMSK = 1<<OCIE0A;  // Enable compare match int., disable overflow int.
+
+#else
+#error Audio not implemented for this board
 #endif
 }
 

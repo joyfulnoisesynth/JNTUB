@@ -90,6 +90,30 @@ namespace JNTUB {
   void analogWriteOut(uint8_t value);
   void digitalWriteOut(bool value);
 
+  /**
+   * =======================================================================
+   * AUDIO OUTPUT
+   * =======================================================================
+   *
+   * For modules that want to output audio, we can utilize the MCU's
+   * Timer/Counter0 to generate an interrupt at a regular interval.
+   *
+   * NOTE: USING TIMER/COUNTER0 FOR AUDIO INTERRUPTS WILL CAUSE TIMING
+   * FUNCTIONS (millis(), micros()) TO BE INACCURATE.
+   */
+
+  enum SampleRate {
+    SAMPLE_RATE_40_KHZ,  // 200 cycles / sample (assuming 8MHz clock)
+    SAMPLE_RATE_20_KHZ,  // 400 cycles / sample (assuming 8MHz clock)
+    SAMPLE_RATE_10_KHZ,  // 800 cycles / sample (assuming 8MHz clock)
+    SAMPLE_RATE_8_KHZ,   // 1000 cycles / sample (assuming 8MHz clock)
+  };
+  void setUpAudioInterrupt(SampleRate rate);  // call once during setup()
+
+  // Implement ISR(AUDIO_INTERRUPT) {} for the audio interrupt service routine.
+  // Call JNTUB::analagWriteOut() to output a sample.
+  #define AUDIO_INTERRUPT TIMER0_COMPA_vect
+
   /*
    * =======================================================================
    * UTILITY CLASSES
