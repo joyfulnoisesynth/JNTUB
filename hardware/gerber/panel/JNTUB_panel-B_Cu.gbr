@@ -1,37 +1,37 @@
-%TF.GenerationSoftware,KiCad,Pcbnew,(5.1.9-0-10_14)*%
-%TF.CreationDate,2021-01-17T19:37:13-06:00*%
-%TF.ProjectId,JNTUB_panel,4a4e5455-425f-4706-916e-656c2e6b6963,rev?*%
-%TF.SameCoordinates,Original*%
-%TF.FileFunction,Copper,L2,Bot*%
-%TF.FilePolarity,Positive*%
+G04 #@! TF.GenerationSoftware,KiCad,Pcbnew,(5.1.9-0-10_14)*
+G04 #@! TF.CreationDate,2021-01-17T22:18:43-06:00*
+G04 #@! TF.ProjectId,JNTUB_panel,4a4e5455-425f-4706-916e-656c2e6b6963,rev?*
+G04 #@! TF.SameCoordinates,Original*
+G04 #@! TF.FileFunction,Copper,L2,Bot*
+G04 #@! TF.FilePolarity,Positive*
 %FSLAX46Y46*%
 G04 Gerber Fmt 4.6, Leading zero omitted, Abs format (unit mm)*
-G04 Created by KiCad (PCBNEW (5.1.9-0-10_14)) date 2021-01-17 19:37:13*
+G04 Created by KiCad (PCBNEW (5.1.9-0-10_14)) date 2021-01-17 22:18:43*
 %MOMM*%
 %LPD*%
 G01*
 G04 APERTURE LIST*
-%TA.AperFunction,NonConductor*%
+G04 #@! TA.AperFunction,NonConductor*
 %ADD10C,0.100000*%
-%TD*%
-%TA.AperFunction,NonConductor*%
+G04 #@! TD*
+G04 #@! TA.AperFunction,NonConductor*
 %ADD11C,0.200000*%
-%TD*%
-%TA.AperFunction,NonConductor*%
+G04 #@! TD*
+G04 #@! TA.AperFunction,NonConductor*
 %ADD12C,0.500000*%
-%TD*%
-%TA.AperFunction,Conductor*%
+G04 #@! TD*
+G04 #@! TA.AperFunction,Conductor*
 %ADD13C,0.406400*%
-%TD*%
-%TA.AperFunction,Conductor*%
+G04 #@! TD*
+G04 #@! TA.AperFunction,Conductor*
 %ADD14C,0.508000*%
-%TD*%
-%TA.AperFunction,Conductor*%
+G04 #@! TD*
+G04 #@! TA.AperFunction,Conductor*
 %ADD15C,0.203200*%
-%TD*%
-%TA.AperFunction,NonConductor*%
+G04 #@! TD*
+G04 #@! TA.AperFunction,NonConductor*
 %ADD16C,0.254000*%
-%TD*%
+G04 #@! TD*
 G04 APERTURE END LIST*
 D10*
 G36*
@@ -432,7 +432,7 @@ X96024523Y-156293380D01*
 X96262619Y-156412428D01*
 X97095952Y-156412428D01*
 D13*
-%TO.N,*%
+G04 #@! TO.N,*
 X105918000Y-99568000D02*
 X105918000Y-58674000D01*
 X105918000Y-58674000D02*
@@ -485,7 +485,7 @@ X90678000Y-64516000D02*
 X90170000Y-64516000D01*
 X90170000Y-64516000D02*
 X89916000Y-64770000D01*
-%TD*%
+G04 #@! TD*
 D16*
 X107113000Y-43307000D02*
 X87451000Y-43307000D01*
@@ -529,7 +529,7 @@ X87451000Y-38049200D01*
 X87451000Y-35254000D01*
 X107113000Y-35254000D01*
 X107113000Y-43307000D01*
-%TA.AperFunction,NonConductor*%
+G04 #@! TA.AperFunction,NonConductor*
 D10*
 G36*
 X107113000Y-43307000D02*
@@ -576,7 +576,7 @@ X87451000Y-35254000D01*
 X107113000Y-35254000D01*
 X107113000Y-43307000D01*
 G37*
-%TD.AperFunction*%
+G04 #@! TD.AperFunction*
 D16*
 X100863400Y-101877706D02*
 X100870383Y-101948605D01*
@@ -924,7 +924,7 @@ X87451000Y-112697158D01*
 X87451000Y-101473000D01*
 X100863400Y-101473000D01*
 X100863400Y-101877706D01*
-%TA.AperFunction,NonConductor*%
+G04 #@! TA.AperFunction,NonConductor*
 D10*
 G36*
 X100863400Y-101877706D02*
@@ -1275,5 +1275,5 @@ X87451000Y-101473000D01*
 X100863400Y-101473000D01*
 X100863400Y-101877706D01*
 G37*
-%TD.AperFunction*%
+G04 #@! TD.AperFunction*
 M02*
