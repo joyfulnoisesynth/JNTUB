@@ -287,6 +287,7 @@ private:
     // TODO: This actually seems to make notes last unnaturally long.
     //       Perhaps make it slightly less than 50-50?
     int8_t dither = mRandom.randomByte() & 0x01;
+    //int8_t dither = 0;
 
     return ((int16_t)Y_a + (int16_t)Y_b + dither) >> 1;
   }
@@ -300,7 +301,10 @@ private:
     // 2-bit random dither
     int8_t dither = mRandom.randomByte() & 0x03;
 
-    return ((int16_t)Y_a + ((int16_t)Y_b)<<1 + (int16_t)Y_c + dither) >> 2;
+    //return ((int16_t)Y_a + ((int16_t)Y_b<<1) + Y_b + Y_c + dither) >> 2;
+    // XXX: Experimenting a little with the weighting, trying to deal with
+    // detuning caused by decay stretching (why is that happening??).
+    return ((int16_t)Y_a + ((int16_t)Y_b<<2) + Y_b + Y_c + dither) >> 3;
   }
 
 public:
@@ -337,13 +341,9 @@ public:
 
   inline int8_t getSample()
   {
-    int8_t feedbackSamp = twoPointAverage();
+    //int8_t feedbackSamp = twoPointAverage();
     // TODO: figure out why the weighted average glitches out so badly
-    //int8_t feedbackSamp = weightedAverage();
-
-    // Apply blend factor for drum synthesis
-    if ((mRandom.randomByte() & 0x7F) < mBlend)
-      feedbackSamp = -feedbackSamp;
+    int8_t feedbackSamp = weightedAverage();
 
     int8_t sampOut = 0;
 
@@ -352,6 +352,10 @@ public:
       sampOut = mDelayLine[mPeriod];
     else
       sampOut = feedbackSamp;
+
+    // Apply blend factor for drum synthesis
+    if ((mRandom.randomByte() & 0x7F) < mBlend)
+      sampOut = -sampOut;
 
     // Choose what to feed into the delay line.
     // If the exciter is running, put that in there.
@@ -367,7 +371,7 @@ public:
 };
 
 #define BUFSIZE 350
-#define PERIOD_MIN 32
+#define PERIOD_MIN 24
 #define PERIOD_MAX (BUFSIZE-1)
 
 KarplusStrong<BUFSIZE> string;
