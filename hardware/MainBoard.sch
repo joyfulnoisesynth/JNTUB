@@ -333,7 +333,7 @@ L Device:R R16
 U 1 1 5FEA3BF6
 P 2500 5025
 F 0 "R16" V 2580 5025 50  0000 C CNN
-F 1 "330k" V 2500 5025 50  0000 C CNN
+F 1 "1M" V 2500 5025 50  0000 C CNN
 F 2 "Resistors_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical" V 2430 5025 50  0001 C CNN
 F 3 "" H 2500 5025 50  0001 C CNN
 	1    2500 5025
@@ -397,7 +397,7 @@ L Device:R R13
 U 1 1 5FEA562E
 P 3350 4575
 F 0 "R13" V 3430 4575 50  0000 C CNN
-F 1 "47k" V 3350 4575 50  0000 C CNN
+F 1 "100k" V 3350 4575 50  0000 C CNN
 F 2 "Resistors_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical" V 3280 4575 50  0001 C CNN
 F 3 "" H 3350 4575 50  0001 C CNN
 	1    3350 4575
@@ -474,7 +474,7 @@ L Device:R R25
 U 1 1 5FEB566D
 P 3275 7250
 F 0 "R25" V 3355 7250 50  0000 C CNN
-F 1 "10k" V 3275 7250 50  0000 C CNN
+F 1 "100k .1%" V 3175 7250 50  0000 C CNN
 F 2 "Resistors_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical" V 3205 7250 50  0001 C CNN
 F 3 "" H 3275 7250 50  0001 C CNN
 	1    3275 7250
@@ -489,7 +489,7 @@ L Device:R R24
 U 1 1 5FEB58F5
 P 2500 7250
 F 0 "R24" V 2580 7250 50  0000 C CNN
-F 1 "10k" V 2500 7250 50  0000 C CNN
+F 1 "100k .1%" V 2400 7250 50  0000 C CNN
 F 2 "Resistors_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical" V 2430 7250 50  0001 C CNN
 F 3 "" H 2500 7250 50  0001 C CNN
 	1    2500 7250
@@ -497,20 +497,20 @@ F 3 "" H 2500 7250 50  0001 C CNN
 $EndComp
 Connection ~ 2875 7250
 Wire Wire Line
-	2875 7450 3175 7450
+	2875 7550 3175 7550
 $Comp
 L Device:Jumper_NO_Small JP1
 U 1 1 5FEB5E16
-P 3275 7450
-F 0 "JP1" H 3275 7530 50  0000 C CNN
-F 1 "JMP_UNIPOLAR" H 3285 7390 40  0000 C CNN
-F 2 "Pin_Headers:Pin_Header_Straight_1x02_Pitch2.54mm" H 3275 7450 50  0001 C CNN
-F 3 "" H 3275 7450 50  0001 C CNN
-	1    3275 7450
+P 3275 7550
+F 0 "JP1" H 3275 7630 50  0000 C CNN
+F 1 "JMP_UNIPOLAR" H 3285 7490 40  0000 C CNN
+F 2 "Pin_Headers:Pin_Header_Straight_1x02_Pitch2.54mm" H 3275 7550 50  0001 C CNN
+F 3 "" H 3275 7550 50  0001 C CNN
+	1    3275 7550
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	3675 7450 3375 7450
+	3675 7550 3375 7550
 Connection ~ 3675 7250
 $Comp
 L power:+5V #PWR037
@@ -534,7 +534,7 @@ L Device:C_Small C12
 U 1 1 5FEB6ADE
 P 2500 6800
 F 0 "C12" H 2510 6870 50  0000 L CNN
-F 1 "C_fil" H 2510 6720 40  0000 L CNN
+F 1 "1.8n" H 2510 6720 40  0000 L CNN
 F 2 "Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm" H 2500 6800 50  0001 C CNN
 F 3 "" H 2500 6800 50  0001 C CNN
 	1    2500 6800
@@ -557,7 +557,7 @@ L Device:R R22
 U 1 1 5FEB71A8
 P 2075 6600
 F 0 "R22" V 2155 6600 50  0000 C CNN
-F 1 "R_fila" V 2075 6600 40  0000 C CNN
+F 1 "100k" V 2075 6600 40  0000 C CNN
 F 2 "Resistors_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical" V 2005 6600 50  0001 C CNN
 F 3 "" H 2075 6600 50  0001 C CNN
 	1    2075 6600
@@ -935,11 +935,11 @@ Wire Wire Line
 Wire Wire Line
 	4700 4775 4700 5575
 Wire Wire Line
-	2875 7250 2875 7450
+	2875 7250 2875 7550
 Wire Wire Line
 	2875 7250 3125 7250
 Wire Wire Line
-	3675 7250 3675 7450
+	3675 7250 3675 7550
 Wire Wire Line
 	2500 6600 2975 6600
 Wire Wire Line
@@ -1125,7 +1125,7 @@ CLK/TRG
 Text Notes 800  7150 0    70   ~ 14
 OUTPUT
 Text Notes 6975 6400 0    60   ~ 0
-NOTES:\n\n- R_led: Will depend on the color & desired brightness. I use 5.6k for my red LEDs.\n\n- R_fila/R_filb/C_filt: Set for desired PWM filter frequencies.\n   I use:       R_fila = 68k        R_filb = 8.2k        C_filt = 2.2n\n   With these values, the cutoff frequencies are:\n          1 kHz (JMP_AUDIO not set)\n          9.9 kHz (JMP_AUDIO set)\n\n- 10k resistors throughout can be replaced with anything 10k-100k.\n\n- Regular switching diodes (e.g., 1N4148) okay for D1, D2, D3, D4.\n\n- Output is bipolar by default, scaled to -5V/+5V.\n   Place JMP_UNIPOLAR to change output range to 0V/+5V.
+NOTES:\n\n- R19/R23: will depend on the color & desired brightness. I use 5.6k for my red LEDs.\n\n- R22/R27/C12: Set for desired PWM filter frequencies.\n   With the provided values, the cutoff frequencies are:\n          884 Hz (JMP_AUDIO not set)\n          9.8 kHz (JMP_AUDIO set)\n   This tool is great: http://sim.okawa-denshi.jp/en/PWMtool.php\n\n- R24/R25: 1% resistors okay (unless required by firmware, e.g., QUANT)\n\n- D1/D2/D3/D4: Regular switching diodes (e.g., 1N4148) okay.\n\n- The 10k resistors in the CV processing circuits  for PARAM1 and PARAM2\n   can be replaced with anything 10k-100k.
 $Comp
 L power:+12V #PWR0112
 U 1 1 60F003D6
@@ -1318,7 +1318,7 @@ L Device:CP1_Small C2
 U 1 1 5FEC5611
 P 7200 1600
 F 0 "C2" H 7210 1670 50  0000 L CNN
-F 1 "15u" H 7210 1520 50  0000 L CNN
+F 1 "22u" H 7210 1520 50  0000 L CNN
 F 2 "Capacitors_THT:CP_Radial_D6.3mm_P2.50mm" H 7200 1600 50  0001 C CNN
 F 3 "" H 7200 1600 50  0001 C CNN
 	1    7200 1600
@@ -1329,7 +1329,7 @@ L Device:CP1_Small C1
 U 1 1 5FEC53EC
 P 7200 1200
 F 0 "C1" H 7210 1270 50  0000 L CNN
-F 1 "15u" H 7210 1120 50  0000 L CNN
+F 1 "22u" H 7210 1120 50  0000 L CNN
 F 2 "Capacitors_THT:CP_Radial_D6.3mm_P2.50mm" H 7200 1200 50  0001 C CNN
 F 3 "" H 7200 1200 50  0001 C CNN
 	1    7200 1200
@@ -1445,7 +1445,7 @@ L Device:R R26
 U 1 1 600D211A
 P 6775 2500
 F 0 "R26" V 6855 2500 50  0000 C CNN
-F 1 "10k" V 6775 2500 50  0000 C CNN
+F 1 "100k" V 6775 2500 50  0000 C CNN
 F 2 "Resistors_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical" V 6705 2500 50  0001 C CNN
 F 3 "" H 6775 2500 50  0001 C CNN
 	1    6775 2500
@@ -1476,7 +1476,7 @@ L Device:R R27
 U 1 1 6013AE20
 P 2075 6100
 F 0 "R27" V 2155 6100 50  0000 C CNN
-F 1 "R_filb" V 2075 6100 40  0000 C CNN
+F 1 "10k" V 2075 6100 40  0000 C CNN
 F 2 "Resistors_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical" V 2005 6100 50  0001 C CNN
 F 3 "" H 2075 6100 50  0001 C CNN
 	1    2075 6100
@@ -1521,7 +1521,7 @@ L Device:R R14
 U 1 1 5FEA5F93
 P 4150 4575
 F 0 "R14" V 4230 4575 50  0000 C CNN
-F 1 "22k" V 4150 4575 50  0000 C CNN
+F 1 "47k" V 4150 4575 50  0000 C CNN
 F 2 "Resistors_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical" V 4080 4575 50  0001 C CNN
 F 3 "" H 4150 4575 50  0001 C CNN
 	1    4150 4575
@@ -1603,13 +1603,13 @@ Wire Notes Line
 Text Notes 1925 5300 0    50   ~ 0
 R17 (on Board 1)
 Text Notes 1860 5310 1    40   ~ 0
-330k
+100k
 $Comp
 L Device:R R18
 U 1 1 5FEA467B
 P 3750 5475
 F 0 "R18" V 3830 5475 50  0000 C CNN
-F 1 "2.2k" V 3750 5475 50  0000 C CNN
+F 1 "10k" V 3750 5475 50  0000 C CNN
 F 2 "Resistors_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical" V 3680 5475 50  0001 C CNN
 F 3 "" H 3750 5475 50  0001 C CNN
 	1    3750 5475
