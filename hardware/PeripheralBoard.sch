@@ -14,11 +14,11 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
-L JNTUB-rescue:POT RV3
+L Device:R_POT_MountingPin RV3
 U 1 1 5FE9C832
 P 3250 1450
-F 0 "RV3" V 3075 1450 50  0000 C CNN
-F 1 "B100K" V 3150 1450 50  0000 C CNN
+F 0 "RV3" H 3007 1404 50  0000 R CNN
+F 1 "B100K" H 3007 1495 50  0000 R CNN
 F 2 "SDIY:Potentiometer_Alpha_9mm_WithGround" H 3250 1450 50  0001 C CNN
 F 3 "" H 3250 1450 50  0001 C CNN
 	1    3250 1450
@@ -36,11 +36,11 @@ F 3 "" H 3250 1200 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L JNTUB-rescue:POT RV2
+L Device:R_POT_MountingPin RV2
 U 1 1 5FE9C835
 P 3250 2450
-F 0 "RV2" V 3075 2450 50  0000 C CNN
-F 1 "B100K" V 3150 2450 50  0000 C CNN
+F 0 "RV2" H 3007 2404 50  0000 R CNN
+F 1 "B100K" H 3007 2495 50  0000 R CNN
 F 2 "SDIY:Potentiometer_Alpha_9mm_WithGround" H 3250 2450 50  0001 C CNN
 F 3 "" H 3250 2450 50  0001 C CNN
 	1    3250 2450
@@ -69,11 +69,11 @@ F 3 "" H 1850 4400 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L JNTUB-rescue:POT RV1
+L Device:R_POT_MountingPin RV1
 U 1 1 5FE9C839
 P 3250 3450
-F 0 "RV1" V 3075 3450 50  0000 C CNN
-F 1 "B100K" V 3150 3450 50  0000 C CNN
+F 0 "RV1" H 3007 3404 50  0000 R CNN
+F 1 "B100K" H 3007 3495 50  0000 R CNN
 F 2 "SDIY:Potentiometer_Alpha_9mm_WithGround" H 3250 3450 50  0001 C CNN
 F 3 "" H 3250 3450 50  0001 C CNN
 	1    3250 3450
@@ -216,7 +216,7 @@ L Device:LED D7
 U 1 1 5FEAB52B
 P 3275 6350
 F 0 "D7" H 3275 6450 50  0000 C CNN
-F 1 "LED_POS" H 3275 6200 50  0000 C CNN
+F 1 "LED" H 3275 6200 50  0000 C CNN
 F 2 "LEDs:LED_D3.0mm" H 3275 6350 50  0001 C CNN
 F 3 "" H 3275 6350 50  0001 C CNN
 	1    3275 6350
@@ -227,7 +227,7 @@ L Device:LED D8
 U 1 1 5FEAB576
 P 3275 6650
 F 0 "D8" H 3275 6750 50  0000 C CNN
-F 1 "LED_NEG" H 3275 6500 50  0000 C CNN
+F 1 "LED" H 3275 6500 50  0000 C CNN
 F 2 "LEDs:LED_D3.0mm" H 3275 6650 50  0001 C CNN
 F 3 "" H 3275 6650 50  0001 C CNN
 	1    3275 6650
@@ -247,8 +247,6 @@ Text Label 3975 6500 2    50   ~ 0
 LED_NEG
 Wire Wire Line
 	3250 1200 3250 1300
-Wire Wire Line
-	3250 1600 3250 1700
 Wire Wire Line
 	3250 2200 3250 2300
 Wire Wire Line
@@ -312,7 +310,7 @@ L Device:LED D6
 U 1 1 5FEAACC9
 P 3300 5600
 F 0 "D6" H 3300 5700 50  0000 C CNN
-F 1 "CLK_LED" H 3300 5450 50  0000 C CNN
+F 1 "LED" H 3300 5450 50  0000 C CNN
 F 2 "LEDs:LED_D3.0mm" H 3300 5600 50  0001 C CNN
 F 3 "" H 3300 5600 50  0001 C CNN
 	1    3300 5600
@@ -339,19 +337,6 @@ F 2 "" H 3250 3700 50  0001 C CNN
 F 3 "" H 3250 3700 50  0001 C CNN
 	1    3250 3700
 	-1   0    0    1   
-$EndComp
-$Comp
-L Device:R R?
-U 1 1 61B5CD54
-P 8325 2675
-AR Path="/5FE97452/61B5CD54" Ref="R?"  Part="1" 
-AR Path="/5FE9B0F3/61B5CD54" Ref="R15"  Part="1" 
-F 0 "R15" V 8405 2675 50  0000 C CNN
-F 1 "R_lim" V 8325 2675 40  0000 C CNN
-F 2 "Resistors_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical" V 8255 2675 50  0001 C CNN
-F 3 "" H 8325 2675 50  0001 C CNN
-	1    8325 2675
-	0    -1   -1   0   
 $EndComp
 Wire Wire Line
 	4075 5350 4175 5350
@@ -402,7 +387,7 @@ AR Path="/5FE97452/602D0D5F" Ref="R?"  Part="1"
 AR Path="/5FE9B0F3/602D0D5F" Ref="R3"  Part="1" 
 F 0 "R3" V 6305 1525 50  0000 C CNN
 F 1 "10k" V 6225 1525 50  0000 C CNN
-F 2 "Resistors_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical" V 6155 1525 50  0001 C CNN
+F 2 "SDIY:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical" V 6155 1525 50  0001 C CNN
 F 3 "" H 6225 1525 50  0001 C CNN
 	1    6225 1525
 	0    1    -1   0   
@@ -415,7 +400,7 @@ AR Path="/5FE97452/602D0D65" Ref="R?"  Part="1"
 AR Path="/5FE9B0F3/602D0D65" Ref="R1"  Part="1" 
 F 0 "R1" V 6305 1225 50  0000 C CNN
 F 1 "10k" V 6225 1225 50  0000 C CNN
-F 2 "Resistors_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical" V 6155 1225 50  0001 C CNN
+F 2 "SDIY:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical" V 6155 1225 50  0001 C CNN
 F 3 "" H 6225 1225 50  0001 C CNN
 	1    6225 1225
 	0    1    -1   0   
@@ -485,7 +470,7 @@ AR Path="/5FE97452/603377A1" Ref="R?"  Part="1"
 AR Path="/5FE9B0F3/603377A1" Ref="R9"  Part="1" 
 F 0 "R9" V 6280 2350 50  0000 C CNN
 F 1 "10k" V 6200 2350 50  0000 C CNN
-F 2 "Resistors_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical" V 6130 2350 50  0001 C CNN
+F 2 "SDIY:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical" V 6130 2350 50  0001 C CNN
 F 3 "" H 6200 2350 50  0001 C CNN
 	1    6200 2350
 	0    -1   -1   0   
@@ -498,7 +483,7 @@ AR Path="/5FE97452/603377A7" Ref="R?"  Part="1"
 AR Path="/5FE9B0F3/603377A7" Ref="R7"  Part="1" 
 F 0 "R7" V 6280 2050 50  0000 C CNN
 F 1 "10k" V 6200 2050 50  0000 C CNN
-F 2 "Resistors_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical" V 6130 2050 50  0001 C CNN
+F 2 "SDIY:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical" V 6130 2050 50  0001 C CNN
 F 3 "" H 6200 2050 50  0001 C CNN
 	1    6200 2050
 	0    -1   -1   0   
@@ -614,19 +599,6 @@ Wire Wire Line
 Wire Wire Line
 	8550 4675 9150 4675
 $Comp
-L Device:R R?
-U 1 1 608FB227
-P 6500 2875
-AR Path="/5FE97452/608FB227" Ref="R?"  Part="1" 
-AR Path="/5FE9B0F3/608FB227" Ref="R17"  Part="1" 
-F 0 "R17" V 6580 2875 50  0000 C CNN
-F 1 "100k" V 6500 2875 50  0000 C CNN
-F 2 "Resistors_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical" V 6430 2875 50  0001 C CNN
-F 3 "" H 6500 2875 50  0001 C CNN
-	1    6500 2875
-	-1   0    0    1   
-$EndComp
-$Comp
 L power:GNDREF #PWR?
 U 1 1 608FB22D
 P 6500 3075
@@ -648,19 +620,6 @@ Wire Wire Line
 Text Label 5550 2675 2    50   ~ 0
 CLK_TRG
 Connection ~ 6500 2675
-$Comp
-L Device:R R?
-U 1 1 60A49DEE
-P 8325 1850
-AR Path="/5FE97452/60A49DEE" Ref="R?"  Part="1" 
-AR Path="/5FE9B0F3/60A49DEE" Ref="R21"  Part="1" 
-F 0 "R21" V 8405 1850 50  0000 C CNN
-F 1 "R_lim" V 8325 1850 40  0000 C CNN
-F 2 "Resistors_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical" V 8255 1850 50  0001 C CNN
-F 3 "" H 8325 1850 50  0001 C CNN
-	1    8325 1850
-	0    1    -1   0   
-$EndComp
 Text Label 7750 1850 2    50   ~ 0
 OUT
 Wire Wire Line
@@ -680,8 +639,6 @@ Wire Wire Line
 Wire Wire Line
 	8700 2050 9050 2050
 Connection ~ 8700 1850
-Text Notes 6700 6475 0    60   ~ 0
-NOTES:\n\n- R_lim: Use 1k for 1/4W resistors. Use 2k for 1/8W resistors.\n\n- LED_NEG can be omitted from Board 1 but must be replaced\n   with a regular switching diode to avoid damage to LED_POS.
 Text Label 4075 5350 2    50   ~ 0
 DITTO
 Wire Wire Line
@@ -703,7 +660,7 @@ AR Path="/5FE97452/60AA80E9" Ref="R?"  Part="1"
 AR Path="/5FE9B0F3/60AA80E9" Ref="R29"  Part="1" 
 F 0 "R29" V 3330 4725 50  0000 C CNN
 F 1 "R_lim" V 3250 4725 40  0000 C CNN
-F 2 "Resistors_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical" V 3180 4725 50  0001 C CNN
+F 2 "SDIY:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical" V 3180 4725 50  0001 C CNN
 F 3 "" H 3250 4725 50  0001 C CNN
 	1    3250 4725
 	-1   0    0    1   
@@ -759,4 +716,86 @@ Text Notes 2150 5125 0    50   ~ 0
 Ground pin shared\nwith J1
 Text Notes 4325 5125 2    50   ~ 0
 Ground pin shared\nwith J2
+Wire Wire Line
+	3250 1600 3250 1700
+$Comp
+L power:GNDREF #PWR0119
+U 1 1 6021A020
+P 3050 1500
+F 0 "#PWR0119" H 3050 1250 50  0001 C CNN
+F 1 "GNDREF" H 3050 1350 50  0001 C CNN
+F 2 "" H 3050 1500 50  0001 C CNN
+F 3 "" H 3050 1500 50  0001 C CNN
+	1    3050 1500
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3050 1450 3050 1500
+$Comp
+L power:GNDREF #PWR0123
+U 1 1 6021E886
+P 3050 2525
+F 0 "#PWR0123" H 3050 2275 50  0001 C CNN
+F 1 "GNDREF" H 3050 2375 50  0001 C CNN
+F 2 "" H 3050 2525 50  0001 C CNN
+F 3 "" H 3050 2525 50  0001 C CNN
+	1    3050 2525
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3050 2525 3050 2450
+$Comp
+L power:GNDREF #PWR0124
+U 1 1 6022381F
+P 3050 3525
+F 0 "#PWR0124" H 3050 3275 50  0001 C CNN
+F 1 "GNDREF" H 3050 3375 50  0001 C CNN
+F 2 "" H 3050 3525 50  0001 C CNN
+F 3 "" H 3050 3525 50  0001 C CNN
+	1    3050 3525
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3050 3525 3050 3450
+Text Notes 6700 6475 0    60   ~ 0
+NOTES:\n\n- R15/R21: Use 1k for 1/4W resistors. Use 2k for 1/8W resistors.\n\n- D8 can be omitted from Board 1 but must be replaced\n   with a regular switching diode to avoid damage to D7.
+$Comp
+L Device:R R?
+U 1 1 61B5CD54
+P 8325 2675
+AR Path="/5FE97452/61B5CD54" Ref="R?"  Part="1" 
+AR Path="/5FE9B0F3/61B5CD54" Ref="R15"  Part="1" 
+F 0 "R15" V 8405 2675 50  0000 C CNN
+F 1 "R_lim" V 8325 2675 40  0000 C CNN
+F 2 "SDIY:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical" V 8255 2675 50  0001 C CNN
+F 3 "" H 8325 2675 50  0001 C CNN
+	1    8325 2675
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Device:R R?
+U 1 1 608FB227
+P 6500 2875
+AR Path="/5FE97452/608FB227" Ref="R?"  Part="1" 
+AR Path="/5FE9B0F3/608FB227" Ref="R17"  Part="1" 
+F 0 "R17" V 6580 2875 50  0000 C CNN
+F 1 "100k" V 6500 2875 50  0000 C CNN
+F 2 "SDIY:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical" V 6430 2875 50  0001 C CNN
+F 3 "" H 6500 2875 50  0001 C CNN
+	1    6500 2875
+	-1   0    0    1   
+$EndComp
+$Comp
+L Device:R R?
+U 1 1 60A49DEE
+P 8325 1850
+AR Path="/5FE97452/60A49DEE" Ref="R?"  Part="1" 
+AR Path="/5FE9B0F3/60A49DEE" Ref="R21"  Part="1" 
+F 0 "R21" V 8405 1850 50  0000 C CNN
+F 1 "R_lim" V 8325 1850 40  0000 C CNN
+F 2 "SDIY:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical" V 8255 1850 50  0001 C CNN
+F 3 "" H 8325 1850 50  0001 C CNN
+	1    8325 1850
+	0    1    -1   0   
+$EndComp
 $EndSCHEMATC
