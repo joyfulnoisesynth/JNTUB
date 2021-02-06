@@ -1,4 +1,4 @@
-update=Sunday, January 17, 2021 at 08:04:53 PM
+update=Friday, February 05, 2021 at 02:03:38 AM
 version=1
 last_client=kicad
 [cvpcb]
@@ -9,6 +9,16 @@ version=1
 [eeschema]
 version=1
 LibDir=
+[schematic_editor]
+version=1
+PageLayoutDescrFile=
+PlotDirectoryName=
+SubpartIdSeparator=0
+SubpartFirstId=65
+NetFmtName=Pcbnew
+SpiceAjustPassiveValues=0
+LabSize=50
+ERC_TestSimilarLabels=1
 [pcbnew]
 version=1
 PageLayoutDescrFile=
@@ -16,7 +26,7 @@ LastNetListRead=JNTUB.net
 CopperLayerCount=2
 BoardThickness=1.6
 AllowMicroVias=0
-AllowBlindVias=0
+AllowBlindVias=1
 RequireCourtyardDefinitions=0
 ProhibitOverlappingCourtyards=1
 MinTrackWidth=0.2032
@@ -249,7 +259,7 @@ dPairViaGap=0.25
 Name=Ground
 Clearance=0.508
 TrackWidth=1.27
-ViaDiameter=1.016
+ViaDiameter=0.9144
 ViaDrill=0.6096
 uViaDiameter=0.6
 uViaDrill=0.4
@@ -300,13 +310,3 @@ uViaDrill=0.4
 dPairWidth=0.2032
 dPairGap=0.25
 dPairViaGap=0.25
-[schematic_editor]
-version=1
-PageLayoutDescrFile=
-PlotDirectoryName=
-SubpartIdSeparator=0
-SubpartFirstId=65
-NetFmtName=Pcbnew
-SpiceAjustPassiveValues=0
-LabSize=50
-ERC_TestSimilarLabels=1

@@ -34,7 +34,7 @@ Text Label 6325 3150 0    50   ~ 0
 MCU_ADC3
 Text Label 6325 3250 0    50   ~ 0
 MCU_ADC2
-Text Label 4900 3950 0    50   ~ 0
+Text Label 4900 2900 0    50   ~ 0
 MCU_ADC3
 $Comp
 L Device:R R6
@@ -122,7 +122,7 @@ F 3 "" H 3450 900 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	3850 1250 3950 1250
-Text Label 4900 2900 0    50   ~ 0
+Text Label 4900 3950 0    50   ~ 0
 MCU_ADC2
 $Comp
 L Device:D_Schottky D1
