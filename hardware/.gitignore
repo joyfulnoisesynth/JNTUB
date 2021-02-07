@@ -3,6 +3,7 @@ finalize/
 front-panel/*.pro
 front-panel/*.svg
 front-panel/gerber/
+smt/
 *.zip
 
 ###############################################################################

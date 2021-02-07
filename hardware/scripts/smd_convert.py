@@ -1,4 +1,4 @@
-# execfile("/Users/Ben/Documents/Kicad/Projects/JNTUB/hardware/smd_convert.py", locals())
+# execfile("/Users/Ben/Documents/Kicad/Projects/JNTUB/hardware/scripts/smd_convert.py", locals())
 
 import pcbnew
 import math
@@ -11,6 +11,7 @@ INCH = 25.5 * MM
 MIL = INCH / 1000
 
 FOOTPRINT_R = 'R_0805_HandSoldering'
+FOOTPRINT_R_BIG = 'R_0805_1206'
 FOOTPRINT_D = 'D_SOD-323_HandSoldering'
 FOOTPRINT_D_PWR = 'D_SOD-123_HandSoldering'
 FOOTPRINT_C_CERM = 'C_0805_HandSoldering'
@@ -23,12 +24,12 @@ RESISTORS = [
     'R3',
     'R7',
     'R9',
-    'R21',
-    'R29',
-    'R15',
+    # 'R21',
+    # 'R29',
+    # 'R15',
     'R17',
 
-    'R23',
+    # 'R23',
     'R24',
     'R25',
 
@@ -43,7 +44,7 @@ RESISTORS = [
     'R2',
 
     'R16',
-    'R19',
+    # 'R19',
     'R14',
     'R20',
 
@@ -54,6 +55,15 @@ RESISTORS = [
     'R22',
     'R27',
     'R28',
+]
+RESISTORS_BIG = [
+    'R15',
+    'R21',
+    'R29',
+]
+RESISTORS_TH = [
+    'R19',
+    'R23',
 ]
 
 DIODES = [
@@ -301,6 +311,7 @@ def ReplaceAndConnectModules(
 
 def Run():
     ReplaceModules(board, RESISTORS, LIB_SDIY, FOOTPRINT_R)
+    ReplaceModules(board, RESISTORS_BIG, LIB_SDIY, FOOTPRINT_R_BIG)
     ReplaceModules(board, DIODES, LIB_SDIY, FOOTPRINT_D)
     ReplaceModules(board, CAPACITORS_CERM, LIB_SDIY, FOOTPRINT_C_CERM)
     ReplaceAndConnectModules(
@@ -312,5 +323,7 @@ def Run():
     )
     ReplaceModules(board, CAPACITORS_ELEC, LIB_SDIY, FOOTPRINT_C_ELEC)
     ReplaceAndConnectModules(board, POWER_DIODES, LIB_SDIY, FOOTPRINT_D_PWR)
-    ReplaceAndConnectModules(board, TRANSISTORS, LIB_SDIY, FOOTPRINT_Q)
+    ReplaceAndConnectModules(
+        board, TRANSISTORS, LIB_SDIY, FOOTPRINT_Q, rot=1800
+    )
     pcbnew.Refresh()
