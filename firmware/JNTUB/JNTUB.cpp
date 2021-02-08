@@ -43,6 +43,14 @@ namespace JNTUB {
 
 #endif
 
+/**
+ * ===========================================================================
+ *
+ *                              PWM / AUDIO
+ *
+ * ===========================================================================
+ */
+
 // The PWM generator is always running, but its output is not connected
 // to any pin on the MCU unless the proper bit(s) is/are set.
 static inline void enablePwmOutput()
@@ -184,6 +192,57 @@ void setUpFastPWM()
   pinMode(PIN_OUT, OUTPUT);
 }
 
+/**
+ * ============================================================================
+ * Precise PWM
+ * ============================================================================
+ */
+
+void setUp10BitPWM()
+{
+  // Enable Timer/Counter1's overflow interrupt so we can change the value
+  // we output to the PWM generator every PWM period.
+#if defined(__AVR_ATtiny85__)
+  // TIMSK – Timer/Counter Interrupt Mask Register.
+  //  - TOIE1: Timer/Counter1 Overflow Interrupt Enable
+  bitSet(TIMSK, TOIE1);
+#else
+#error Precise PWM not implemented for this board
+#endif
+}
+
+static volatile uint16_t pwmVal = 0;
+
+void analogWriteOutPrecise(uint16_t value)
+{
+  noInterrupts();
+  pwmVal = value;
+  interrupts();
+}
+
+ISR(TIMER1_OVF_vect)
+{
+  static int16_t remaining = 0;
+  static uint8_t cycle = 0;
+
+  if ((cycle & 0x03) == 0)
+    remaining = pwmVal;
+
+  if (remaining >= 255)
+    OCR1A = 255
+  else
+    OCR1A = remaining;
+
+  remaining -= 256;
+
+  ++cycle;
+}
+
+/**
+ * ============================================================================
+ * Audio-rate PWM
+ * ============================================================================
+ */
 void setUpAudioInterrupt(SampleRate rate)
 {
 #if defined(__AVR_ATtiny85__)
@@ -193,22 +252,27 @@ void setUpAudioInterrupt(SampleRate rate)
   TCCR0A = 3<<WGM00;  // Fast PWM
   TCCR0B = 1<<WGM02;  // Overflow on TOP
 
+  // Set prescale to get clock down to 1 MHz
+#if F_CPU == 8000000
+  TCCR0B |= 2<<CS00;  // 1/8 prescale
+#elif F_CPU == 1000000
+  TCCR0B |= 1<<CS00;  // 1/1 prescale
+#else
+#error Audio not implemented for this clock frequency
+#endif
+
   switch(rate) {
     case SAMPLE_RATE_40_KHZ:
-      TCCR0B |= 2<<CS00;  // 1/8 prescale
-      OCR0A = 24;         // Divide by 25 (8M / 8 / 25 = 40k)
+      OCR0A = 24;   // Divide by 25 (1M / 25 = 40k)
       break;
     case SAMPLE_RATE_20_KHZ:
-      TCCR0B |= 2<<CS00;  // 1/8 prescale
-      OCR0A = 49;         // Divide by 50 (8M / 8 / 50 = 20k)
+      OCR0A = 49;   // Divide by 50 (1M / 50 = 20k)
       break;
     case SAMPLE_RATE_10_KHZ:
-      TCCR0B |= 2<<CS00;  // 1/8 prescale
-      OCR0A = 99;         // Divide by 100 (8M / 8 / 100 = 10k)
+      OCR0A = 99;   // Divide by 100 (1M / 100 = 10k)
       break;
     case SAMPLE_RATE_8_KHZ:
-      TCCR0B |= 2<<CS00;  // 1/8 prescale
-      OCR0A = 124;         // Divide by 125 (8M / 8 / 125 = 8k)
+      OCR0A = 124;  // Divide by 125 (1M / 125 = 8k)
       break;
     default:
       break;

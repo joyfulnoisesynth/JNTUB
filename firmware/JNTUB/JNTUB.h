@@ -112,6 +112,25 @@ namespace JNTUB {
 
   /**
    * =======================================================================
+   * PRECISE PWM OUTPUT
+   * =======================================================================
+   *
+   * "But Ben!" you exclaim, "the ATtiny85 only has 8-bit PWM!"
+   * Indeed. However, we can squeeze more precision out of it by sort of
+   * manually generating the PWM waveform ourselves.
+   *
+   * See David Johnson-Davies' wonderful article on the topic:
+   * "10 or 12-bit DAC from the ATtiny85"
+   * http://www.technoblogy.com/show?1NGL
+   *
+   * Assuming you use this in conjunction with setUpFastPWM,
+   * using 10-bit PWM will lower the PWM frequency to 62.5 kHz.
+   */
+  void setUp10BitPWM();  // call once during setup()
+  void analogWriteOutPrecise(uint16_t value);
+
+  /**
+   * =======================================================================
    * AUDIO OUTPUT
    * =======================================================================
    *
