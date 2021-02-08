@@ -1,8 +1,10 @@
+backup/
 rescue-backup/
 finalize/
 front-panel/*.pro
 front-panel/*.svg
 front-panel/gerber/
+front-panel/blank-panel/
 smt/
 *.zip
 
