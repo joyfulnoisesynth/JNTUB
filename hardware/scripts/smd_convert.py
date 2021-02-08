@@ -1,7 +1,13 @@
+#!/Applications/Kicad/kicad.app/Contents/Frameworks/Python.framework/Versions/Current/bin/python
 # execfile("/Users/Ben/Documents/Kicad/Projects/JNTUB/hardware/scripts/smd_convert.py", locals())
 
-import pcbnew
 import math
+import sys
+
+sys.path.insert(
+    0, "/Applications/Kicad/kicad.app/Contents/Frameworks/python/site-packages/"
+)
+import pcbnew
 
 
 LIB_SDIY = '/Users/Ben/Documents/Kicad/Projects/JNTUB/hardware/Libraries/SDIY.pretty'
@@ -112,13 +118,7 @@ OFFSETS = {
 }
 
 
-board = pcbnew.GetBoard()
-mod = board.FindModuleByReference('R11')
-pad = mod.FindPadByName('1')
-track = board.TracksInNet(board.GetNetcodeFromNetname('GNDREF'))[0]
-
-F_CU = board.GetLayerID('F.Cu')
-B_CU = board.GetLayerID('B.Cu')
+board = None
 
 
 def Magnitude(wx):
@@ -232,9 +232,7 @@ def CreateSMTClone2(board, mod, footprintLib, footprintName):
         via.SetPosition(viaPos)
         via.SetNet(net)
         via.SetWidth(net.GetNetClass().GetViaDiameter())
-        F_CU = board.GetLayerID('F.Cu')
-        B_CU = board.GetLayerID('B.Cu')
-        via.SetLayerPair(F_CU, B_CU)
+        via.SetLayerPair(pcbnew.F_Cu, pcbnew.B_Cu)
         # Create track between new pad and the via.
         track = pcbnew.TRACK(board)
         board.Add(track)
@@ -242,7 +240,7 @@ def CreateSMTClone2(board, mod, footprintLib, footprintName):
         track.SetEnd(via.GetPosition())
         track.SetNet(net)
         track.SetWidth(int(12 * MIL))
-        track.SetLayer(F_CU)
+        track.SetLayer(pcbnew.F_Cu)
     return new_mod
 
 
@@ -278,7 +276,7 @@ def ConnectModuleToNets(board, mod):
         padPos = pad.GetPosition()
         padNet = pad.GetNetCode()
         nearestPos, nearestTrack = GetNearestPointOnNet(
-            board, padPos, padNet, F_CU
+            board, padPos, padNet, pcbnew.F_Cu
         )
         print('nearest: {},{}'.format(nearestPos.x, nearestPos.y))
         track = pcbnew.TRACK(board)
@@ -287,7 +285,7 @@ def ConnectModuleToNets(board, mod):
         track.SetEnd(nearestPos)
         track.SetNet(board.GetNetsByNetcode()[padNet])
         track.SetWidth(nearestTrack.GetWidth())
-        track.SetLayer(F_CU)
+        track.SetLayer(pcbnew.F_Cu)
 
 
 def ReplaceAndConnectModules(
@@ -309,6 +307,14 @@ def ReplaceAndConnectModules(
         board.Delete(mod)
 
 
+def AdjustNetclassSettings(board):
+    netclasses = board.GetAllNetClasses()
+    ground = netclasses['Ground']
+    ground.SetClearance(int(16 * MIL))
+    power = netclasses['Power']
+    ground.SetClearance(int(12 * MIL))
+
+
 def Run():
     ReplaceModules(board, RESISTORS, LIB_SDIY, FOOTPRINT_R)
     ReplaceModules(board, RESISTORS_BIG, LIB_SDIY, FOOTPRINT_R_BIG)
@@ -326,4 +332,20 @@ def Run():
     ReplaceAndConnectModules(
         board, TRANSISTORS, LIB_SDIY, FOOTPRINT_Q, rot=1800
     )
+    AdjustNetclassSettings(board)
     pcbnew.Refresh()
+
+
+if __name__ == '__main__':
+    filename = sys.argv[1]
+    print('Loading board {}'.format(filename))
+    board = pcbnew.LoadBoard(filename)
+    print('Running script')
+    Run()
+    print('Saving board to {}'.format(filename))
+    board.Save(filename)
+else:
+    board = pcbnew.GetBoard()
+    mod = board.FindModuleByReference('R11')
+    pad = mod.FindPadByName('1')
+    track = board.TracksInNet(board.GetNetcodeFromNetname('GNDREF'))[0]
