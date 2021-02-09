@@ -380,7 +380,7 @@ JNTUB::EdgeDetector trigger;
 void setup()
 {
   JNTUB::setUpFastPWM();
-  JNTUB::setUpAudioInterrupt(JNTUB::SAMPLE_RATE_20_KHZ);
+  JNTUB::setUpTimerInterrupt(JNTUB::SAMPLE_RATE_20_KHZ);
 }
 
 void loop()
@@ -398,7 +398,7 @@ void loop()
     string.trigger();
 }
 
-ISR(AUDIO_INTERRUPT)
+ISR(TIMER_INTERRUPT)
 {
   int8_t sample = string.getSample();
 

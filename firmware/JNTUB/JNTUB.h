@@ -131,13 +131,14 @@ namespace JNTUB {
 
   /**
    * =======================================================================
-   * AUDIO OUTPUT
+   * TIMER INTERRUPT / AUDIO OUTPUT
    * =======================================================================
    *
-   * For modules that want to output audio, we can utilize the MCU's
-   * Timer/Counter0 to generate an interrupt at a regular interval.
+   * For modules that want to perform some action at a rapid and precise
+   * interval (such as outputting audio samples), we can utilize the MCU's
+   * Timer/Counter0 to generate a regular interrupt.
    *
-   * NOTE: USING TIMER/COUNTER0 FOR AUDIO INTERRUPTS WILL CAUSE TIMING
+   * NOTE: USING TIMER/COUNTER0 FOR TIMER INTERRUPTS WILL CAUSE TIMING
    * FUNCTIONS (millis(), micros()) TO BE INACCURATE.
    */
 
@@ -146,12 +147,13 @@ namespace JNTUB {
     SAMPLE_RATE_20_KHZ,  // 400 cycles / sample (assuming 8MHz clock)
     SAMPLE_RATE_10_KHZ,  // 800 cycles / sample (assuming 8MHz clock)
     SAMPLE_RATE_8_KHZ,   // 1000 cycles / sample (assuming 8MHz clock)
+    SAMPLE_RATE_4_KHZ,   // 2000 cycles / sample (assuming 8MHz clock)
   };
-  void setUpAudioInterrupt(SampleRate rate);  // call once during setup()
+  void setUpTimerInterrupt(SampleRate rate);  // call once during setup()
 
-  // Implement ISR(AUDIO_INTERRUPT) {} for the audio interrupt service routine.
-  // Call JNTUB::analagWriteOut() to output a sample.
-  #define AUDIO_INTERRUPT TIMER0_COMPA_vect
+  // Implement ISR(TIMER_INTERRUPT) {} for the timer/audio service routine.
+  // Call JNTUB::analagWriteOut() to output an audio sample.
+  #define TIMER_INTERRUPT TIMER0_COMPA_vect
 
   /*
    * =======================================================================

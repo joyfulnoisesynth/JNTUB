@@ -1,6 +1,6 @@
 JNTUB	KEYWORD1
 setUpFastPWM	KEYWORD2
-setUpAudioInterrupt	KEYWORD2
+setUpTimerInterrupt	KEYWORD2
 analogWriteOut	KEYWORD2
 digitalWriteOut	KEYWORD2
 setUp10BitPWM	KEYWORD2

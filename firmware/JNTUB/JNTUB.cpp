@@ -46,7 +46,7 @@ namespace JNTUB {
 /**
  * ===========================================================================
  *
- *                              PWM / AUDIO
+ *                           PWM / AUDIO / TIMERS
  *
  * ===========================================================================
  */
@@ -240,10 +240,10 @@ ISR(TIMER1_OVF_vect)
 
 /**
  * ============================================================================
- * Audio-rate PWM
+ * Timer Interrupts
  * ============================================================================
  */
-void setUpAudioInterrupt(SampleRate rate)
+void setUpTimerInterrupt(SampleRate rate)
 {
 #if defined(__AVR_ATtiny85__)
 
@@ -258,7 +258,7 @@ void setUpAudioInterrupt(SampleRate rate)
 #elif F_CPU == 1000000
   TCCR0B |= 1<<CS00;  // 1/1 prescale
 #else
-#error Audio not implemented for this clock frequency
+#error setUpTimerInterrupt not implemented for this clock frequency
 #endif
 
   switch(rate) {
@@ -274,6 +274,9 @@ void setUpAudioInterrupt(SampleRate rate)
     case SAMPLE_RATE_8_KHZ:
       OCR0A = 124;  // Divide by 125 (1M / 125 = 8k)
       break;
+    case SAMPLE_RATE_4_KHZ:
+      OCR0A = 249;  // Divide by 250 (1M / 125 = 4k)
+      break;
     default:
       break;
   }
@@ -281,7 +284,7 @@ void setUpAudioInterrupt(SampleRate rate)
   TIMSK = 1<<OCIE0A;  // Enable compare match int., disable overflow int.
 
 #else
-#error Audio not implemented for this board
+#error setUpTimerInterrupt not implemented for this board
 #endif
 }
 

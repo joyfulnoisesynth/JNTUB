@@ -258,7 +258,7 @@ void setup()
   currentBlend = 0;
 
   JNTUB::setUpFastPWM();
-  JNTUB::setUpAudioInterrupt(JNTUB::SAMPLE_RATE_20_KHZ);
+  JNTUB::setUpTimerInterrupt(JNTUB::SAMPLE_RATE_20_KHZ);
 }
 
 void loop()
@@ -313,7 +313,7 @@ void loop()
 
 }
 
-ISR(AUDIO_INTERRUPT)
+ISR(TIMER_INTERRUPT)
 {
   int16_t sample1 = oscs[0].getSample() << 1;
   int8_t sample2 = oscs[1].getSample();
