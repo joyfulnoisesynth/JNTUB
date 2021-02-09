@@ -5,8 +5,8 @@ $Descr A4 11693 8268
 encoding utf-8
 Sheet 3 3
 Title "JoyfulNoise Tiny Utility Board - Board 2 - Main Board"
-Date "2021-01-17"
-Rev "0.2"
+Date "2021-02-06"
+Rev "0.3"
 Comp "Created by Ben Reeves"
 Comment1 "This hardware is open source under CC BY-SA 4.0"
 Comment2 ""
