@@ -10,3 +10,4 @@ CurveKnob	KEYWORD1
 EdgeDetector	KEYWORD1
 Stopwatch	KEYWORD1
 Clock	KEYWORD1
+FastClock	KEYWORD1

@@ -229,7 +229,7 @@ ISR(TIMER1_OVF_vect)
     remaining = pwmVal;
 
   if (remaining >= 255)
-    OCR1A = 255
+    OCR1A = 255;
   else
     OCR1A = remaining;
 
@@ -537,6 +537,101 @@ void Clock::update(uint32_t time)
   // Start counting a new period if one is just starting
   if (isRising())
     mStopwatch.reset();
+}
+
+/**
+ * ============================================================================
+ * FastClock
+ * ============================================================================
+ */
+
+uint32_t FastClock::microsToRate(uint32_t micros, uint32_t sampleRate)
+{
+  // Phase should advance this much per microsecond:
+  uint32_t ratePerMicro = PHASE_MAX / micros;
+  // And one sample takes this many microseconds:
+  uint32_t microsPerSample = 1000000UL / sampleRate;
+  // So this much phase should advance each sample:
+  return ratePerMicro * microsPerSample;
+}
+
+uint32_t FastClock::millisToRate(uint32_t millis, uint32_t sampleRate)
+{
+  return microsToRate(millis * 1000, sampleRate);
+}
+
+FastClock::FastClock(uint32_t rate=0)
+{
+  mRate = rate;
+  mDuty = PHASE_MAX / 2;
+  mCurPhase = 0;
+  mRunning = false;
+  mPrevState = 0;
+}
+
+uint32_t FastClock::getRate() const
+{
+  return mRate;
+}
+
+void FastClock::setRate(uint32_t rate)
+{
+  mRate = rate;
+}
+
+uint32_t FastClock::getPhase() const
+{
+  return mCurPhase;
+}
+
+uint32_t FastClock::getDuty() const
+{
+  return mDuty;
+}
+
+void FastClock::setDuty(uint32_t duty)
+{
+  mDuty = duty;
+}
+
+bool FastClock::getState() const
+{
+  return mCurPhase < mDuty;
+}
+
+bool FastClock::isRising() const
+{
+  return getState() & !mPrevState;
+}
+
+bool FastClock::isFalling() const
+{
+  return !getState() & mPrevState;
+}
+
+void FastClock::start()
+{
+  mRunning = true;
+}
+
+void FastClock::stop()
+{
+  mRunning = false;
+}
+
+void FastClock::sync(uint32_t phase=0)
+{
+  mCurPhase = phase;
+}
+
+void FastClock::update()
+{
+  if (mRunning) {
+    mPrevState = getState();
+    mCurPhase += mRate;
+    if (mCurPhase >= PHASE_MAX)
+      mCurPhase -= PHASE_MAX;
+  }
 }
 
 }  //JNTUB

@@ -142,12 +142,12 @@ namespace JNTUB {
    * FUNCTIONS (millis(), micros()) TO BE INACCURATE.
    */
 
-  enum SampleRate {
-    SAMPLE_RATE_40_KHZ,  // 200 cycles / sample (assuming 8MHz clock)
-    SAMPLE_RATE_20_KHZ,  // 400 cycles / sample (assuming 8MHz clock)
-    SAMPLE_RATE_10_KHZ,  // 800 cycles / sample (assuming 8MHz clock)
-    SAMPLE_RATE_8_KHZ,   // 1000 cycles / sample (assuming 8MHz clock)
-    SAMPLE_RATE_4_KHZ,   // 2000 cycles / sample (assuming 8MHz clock)
+  enum SampleRate : uint16_t {
+    SAMPLE_RATE_40_KHZ = 40000,  // 200 cycles / sample (assuming 8MHz clock)
+    SAMPLE_RATE_20_KHZ = 20000,  // 400 cycles / sample (assuming 8MHz clock)
+    SAMPLE_RATE_10_KHZ = 10000,  // 800 cycles / sample (assuming 8MHz clock)
+    SAMPLE_RATE_8_KHZ = 8000,   // 1000 cycles / sample (assuming 8MHz clock)
+    SAMPLE_RATE_4_KHZ = 4000,   // 2000 cycles / sample (assuming 8MHz clock)
   };
   void setUpTimerInterrupt(SampleRate rate);  // call once during setup()
 
@@ -320,14 +320,6 @@ namespace JNTUB {
 
   /**
    * A clock generator that also reports phase.
-   *
-   * The generator is agnostic of timing units and operating environment.
-   * In other words, it need not run on an AVR board, and you can express
-   * clock periods as microseconds, milliseconds, whatever you want.
-   *
-   * To start the clock, call start() with the current real time unit
-   * (e.g., on Arduino, you could pass in the value of millis()).
-   * Every loop, call update() with the new current real time unit.
    */
   class Clock {
   public:
@@ -361,6 +353,54 @@ namespace JNTUB {
     void     stop();
     void     sync(uint8_t phase=0);
     void     update(uint32_t time);
+  };
+
+  /**
+   * A more performance-sensitive clock. Meant to be updated on a regular
+   * timer interrupt.
+   *
+   * NOTE: INTERRUPTS MUST BE DISABLED WHILE MODIFYING FIELDS OF THIS CLASS.
+   */
+  class FastClock {
+    private:
+      // 32-bit phase accumulator
+      uint32_t mCurPhase;
+      // How much phase advances per update
+      uint32_t mRate;
+      uint32_t mDuty;
+      uint8_t mRunning: 1,
+              mPrevState: 1;
+
+    public:
+      FastClock(uint32_t rate=0);
+
+      uint32_t getRate() const;
+      void     setRate(uint32_t rate);
+
+      // Helper functions to convert from milli/microseconds to clock rate,
+      // assuming that the clock is being update()-ed at the given sampleRate.
+      static uint32_t microsToRate(uint32_t micros, uint32_t sampleRate);
+      static uint32_t millisToRate(uint32_t millis, uint32_t sampleRate);
+
+      static const uint8_t PHASE_BITS = 30;
+      static const uint32_t PHASE_MAX = (uint32_t)1<<PHASE_BITS;
+      uint32_t getPhase() const;
+
+      // Clock is high when 0 <= phase < duty.
+      // Clock is low when duty <= phase < PHASE_MAX.
+      uint32_t getDuty() const;
+      void     setDuty(uint32_t duty);
+
+      bool     getState() const;
+      bool     isRising() const;
+      bool     isFalling() const;
+
+      // NOTE: call update() before modifying clock parameters
+      void     start();
+      void     stop();
+      void     sync(uint32_t phase=0);
+
+      void update();
   };
 
 }  //JNTUB
