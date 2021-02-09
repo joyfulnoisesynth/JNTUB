@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="v0.2"
+VERSION="v0.3"
 
 zip_files() {
 	SRC_DIR=$1
@@ -18,3 +18,4 @@ rm -rf gerber/*
 zip_files finalize/board1 gerber/board1
 zip_files finalize/board2 gerber/board2
 zip_files front-panel/gerber gerber/panel
+zip_files smt/ gerber/smt
