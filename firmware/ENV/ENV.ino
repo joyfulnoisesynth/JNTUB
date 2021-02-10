@@ -73,6 +73,13 @@
 // Envelope shapes
 #include "Tables.h"
 
+#define TIMER_RATE JNTUB::SAMPLE_RATE_10_KHZ
+
+uint32_t microsToRate(uint32_t us)
+{
+  return JNTUB::FastClock::microsToRate(us, TIMER_RATE);
+}
+
 /**
  * Blends between two values with no divides.
  * For blend=0, returns a
@@ -100,59 +107,75 @@ class Envelope {
 private:
   const CurveT *mCurve;
 
-  JNTUB::Stopwatch mStopwatch;
-  uint32_t mAttackTime;
-  uint32_t mDecayTime;
+  JNTUB::FastClock mClock;
+  uint32_t mPrevClockPhase;
+  uint32_t mAttackRate;
+  uint32_t mDecayRate;
   uint8_t mCurVal;
-  bool mIsRising;
+  enum {
+    IDLE,
+    RISE,
+    FALL,
+  } mState;
 
 public:
   Envelope(const CurveT *curve)
   {
     mCurve = curve;
-    mAttackTime = 0;
-    mDecayTime = 0;
+    mPrevClockPhase = 0;
+    mAttackRate = 0;
+    mDecayRate = 0;
     mCurVal = 0;
-    mIsRising = false;
+    mState = IDLE;
   }
 
-  void setAttack(uint32_t attack)
+  void setAttack(uint32_t attackMicros)
   {
-    mAttackTime = attack;
+    mAttackRate = microsToRate(attackMicros);
   }
 
-  void setDecay(uint32_t decay)
+  void setDecay(uint32_t decayMicros)
   {
-    mDecayTime = decay;
+    mDecayRate = microsToRate(decayMicros);
   }
 
-  void trigger()
+  inline void trigger()
   {
-    mIsRising = true;
-    mStopwatch.reset();
+    mState = RISE;
+    mClock.setRate(mAttackRate);
+    mClock.sync();
+    mClock.start();
   }
 
-  void update(uint32_t time)
+  inline void update()
   {
-    mStopwatch.update(time);
+    mPrevClockPhase = mClock.getPhase();
+    mClock.update();
+    uint32_t curClockPhase = mClock.getPhase();
 
-    uint32_t since = mStopwatch.getTime();
-    if (mIsRising) {
-      if (since > mAttackTime) {
-        mIsRising = false;
-        mStopwatch.reset();
-        mCurVal = 255;
-      } else {
-        uint8_t index = map(since, 0, mAttackTime, 0, 255);
-        mCurVal = mCurve->getValue(index);
+    if (mState == RISE) {
+      // If clock finished its period, switch to FALL.
+      if (curClockPhase < mPrevClockPhase) {
+        mState = FALL;
+        mClock.setRate(mDecayRate);
+        mClock.sync();
       }
+    } else if (mState == FALL) {
+      // If clock finished its period, switch to IDLE.
+      if (curClockPhase < mPrevClockPhase) {
+        mState = IDLE;
+        mClock.stop();
+      }
+    }
+
+    uint8_t index = curClockPhase >> (JNTUB::FastClock::PHASE_BITS - 8);
+
+    if (mState == RISE) {
+      mCurVal = mCurve->getValue(index);
+    } else if (mState == FALL) {
+      mCurVal = 255 - mCurve->getValue(index);
     } else {
-      if (since > mDecayTime) {
-        mCurVal = 0;
-      } else {
-        uint8_t index = map(since, 0, mDecayTime, 0, 255);
-        mCurVal = 255 - mCurve->getValue(index);
-      }
+      mCurVal = 0;
     }
   }
 
@@ -244,6 +267,7 @@ Envelope<BlendedCurve> env(&blendedCurve);
 void setup()
 {
   JNTUB::setUpFastPWM();
+  JNTUB::setUpTimerInterrupt(TIMER_RATE);
 }
 
 void loop()
@@ -251,8 +275,6 @@ void loop()
   uint16_t shapeRaw = analogRead(JNTUB::PIN_PARAM3);
   uint16_t decayRaw = analogRead(JNTUB::PIN_PARAM2);
   uint16_t attackRaw = analogRead(JNTUB::PIN_PARAM1);
-  bool trgRaw = digitalRead(JNTUB::PIN_GATE_TRG);
-  uint32_t time = micros();
 
   uint8_t curveSelect;
   uint8_t blend;
@@ -276,11 +298,17 @@ void loop()
 
   attackKnob.update(attackRaw);
   decayKnob.update(decayRaw);
+  noInterrupts();
   env.setAttack(attackKnob.getValue());
   env.setDecay(decayKnob.getValue());
+  interrupts();
+}
 
-  env.update(time);
+ISR(TIMER_INTERRUPT)
+{
+  env.update();
 
+  bool trgRaw = digitalRead(JNTUB::PIN_GATE_TRG);
   trigger.update(trgRaw);
   if (trigger.isRising())
     env.trigger();
