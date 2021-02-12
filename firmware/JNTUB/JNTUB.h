@@ -148,6 +148,7 @@ namespace JNTUB {
     SAMPLE_RATE_10_KHZ = 10000,  // 800 cycles / sample (assuming 8MHz clock)
     SAMPLE_RATE_8_KHZ = 8000,   // 1000 cycles / sample (assuming 8MHz clock)
     SAMPLE_RATE_4_KHZ = 4000,   // 2000 cycles / sample (assuming 8MHz clock)
+    SAMPLE_RATE_1_KHZ = 1000,   // 8000 cycles / sample (assuming 8MHz clock)
   };
   void setUpTimerInterrupt(SampleRate rate);  // call once during setup()
 

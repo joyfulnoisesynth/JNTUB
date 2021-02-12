@@ -243,45 +243,115 @@ ISR(TIMER1_OVF_vect)
  * Timer Interrupts
  * ============================================================================
  */
+
+#define TIMER0_PRESCALE_1 (1<<CS00)
+#define TIMER0_PRESCALE_8 (2<<CS00)
+#define TIMER0_PRESCALE_64 (3<<CS00)
+
 void setUpTimerInterrupt(SampleRate rate)
 {
 #if defined(__AVR_ATtiny85__)
 
-  TIMSK = 0;          // Timer interrupts OFF
-
   TCCR0A = 3<<WGM00;  // Fast PWM
   TCCR0B = 1<<WGM02;  // Overflow on TOP
 
-  // Set prescale to get clock down to 1 MHz
-#if F_CPU == 8000000
-  TCCR0B |= 2<<CS00;  // 1/8 prescale
-#elif F_CPU == 1000000
-  TCCR0B |= 1<<CS00;  // 1/1 prescale
-#else
-#error setUpTimerInterrupt not implemented for this clock frequency
-#endif
+#if F_CPU == 16000000
 
   switch(rate) {
     case SAMPLE_RATE_40_KHZ:
+      TCCR0B |= TIMER0_PRESCALE_8;
+      OCR0A = 49;   // Divide by 50 (2M / 50 = 40k)
+      break;
+    case SAMPLE_RATE_20_KHZ:
+      TCCR0B |= TIMER0_PRESCALE_8;
+      OCR0A = 99;   // Divide by 100 (2M / 100 = 20k)
+      break;
+    case SAMPLE_RATE_10_KHZ:
+      TCCR0B |= TIMER0_PRESCALE_8;
+      OCR0A = 199;   // Divide by 200 (2M / 200 = 10k)
+      break;
+    case SAMPLE_RATE_8_KHZ:
+      TCCR0B |= TIMER0_PRESCALE_8;
+      OCR0A = 249;  // Divide by 250 (2M / 250 = 8k)
+      break;
+    case SAMPLE_RATE_4_KHZ:
+      TCCR0B |= TIMER0_PRESCALE_64;
+      OCR0A = 61;   // Divide by 62 (250k / 62 = 4,032) **
+    case SAMPLE_RATE_1_KHZ:
+      TCCR0B |= TIMER0_PRESCALE_64;
+      OCR0A = 249;   // Divide by 250 (250k / 250 = 1k)
+    default:
+      break;
+  }
+
+#elif F_CPU == 8000000
+
+  switch(rate) {
+    case SAMPLE_RATE_40_KHZ:
+      TCCR0B |= TIMER0_PRESCALE_8;
       OCR0A = 24;   // Divide by 25 (1M / 25 = 40k)
       break;
     case SAMPLE_RATE_20_KHZ:
+      TCCR0B |= TIMER0_PRESCALE_8;
       OCR0A = 49;   // Divide by 50 (1M / 50 = 20k)
       break;
     case SAMPLE_RATE_10_KHZ:
+      TCCR0B |= TIMER0_PRESCALE_8;
       OCR0A = 99;   // Divide by 100 (1M / 100 = 10k)
       break;
     case SAMPLE_RATE_8_KHZ:
+      TCCR0B |= TIMER0_PRESCALE_8;
       OCR0A = 124;  // Divide by 125 (1M / 125 = 8k)
       break;
     case SAMPLE_RATE_4_KHZ:
+      TCCR0B |= TIMER0_PRESCALE_8;
       OCR0A = 249;  // Divide by 250 (1M / 125 = 4k)
+      break;
+    case SAMPLE_RATE_1_KHZ:
+      TCCR0B |= TIMER0_PRESCALE_64;
+      OCR0A = 124;  // Divide by 125 (125k / 125 = 1k)
       break;
     default:
       break;
   }
 
-  TIMSK = 1<<OCIE0A;  // Enable compare match int., disable overflow int.
+#elif F_CPU == 1000000
+
+  switch(rate) {
+    case SAMPLE_RATE_40_KHZ:
+      TCCR0B |= TIMER0_PRESCALE_1;
+      OCR0A = 24;   // Divide by 25 (1M / 25 = 40k)
+      break;
+    case SAMPLE_RATE_20_KHZ:
+      TCCR0B |= TIMER0_PRESCALE_1;
+      OCR0A = 49;   // Divide by 50 (1M / 50 = 20k)
+      break;
+    case SAMPLE_RATE_10_KHZ:
+      TCCR0B |= TIMER0_PRESCALE_1;
+      OCR0A = 99;   // Divide by 100 (1M / 100 = 10k)
+      break;
+    case SAMPLE_RATE_8_KHZ:
+      TCCR0B |= TIMER0_PRESCALE_1;
+      OCR0A = 124;  // Divide by 125 (1M / 125 = 8k)
+      break;
+    case SAMPLE_RATE_4_KHZ:
+      TCCR0B |= TIMER0_PRESCALE_1;
+      OCR0A = 249;  // Divide by 250 (1M / 125 = 4k)
+      break;
+    case SAMPLE_RATE_1_KHZ:
+      TCCR0B |= TIMER0_PRESCALE_8;
+      OCR0A = 124;  // Divide by 125 (125k / 125 = 1k)
+      break;
+    default:
+      break;
+  }
+
+#else
+#error setUpTimerInterrupt not implemented for this clock frequency
+#endif // F_CPU
+
+  bitSet(TIMSK, OCIE0A);  // Enable compare match int.
+  bitClear(TIMSK, TOIE0); // Disable overflow int.
 
 #else
 #error setUpTimerInterrupt not implemented for this board
