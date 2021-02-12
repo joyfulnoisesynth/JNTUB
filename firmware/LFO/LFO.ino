@@ -80,6 +80,8 @@
 // Wavetable data
 #include "Tables.h"
 
+#define USE_10_BIT_PWM
+
 // LFO periods in milliseconds
 const uint32_t PERIOD_CURVE[] = {
   180000,
@@ -135,11 +137,15 @@ void setup()
 
   JNTUB::setUpTimerInterrupt(TIMER_RATE);
 
+#ifdef USE_10_BIT_PWM
   // At slow speeds, the 8-bitness of the PWM output becomes quite apparent.
   // So we'll utilize the JNTUB library's 10-bit PWM procedure.
   // Since we only store 8-bit values in the wavetables though, we'll have
   // to interpolate in order to fully utilize those 10 bits.
   JNTUB::setUp10BitPWM();
+#else
+  JNTUB::setUpFastPWM();
+#endif
 }
 
 void loop()
@@ -186,11 +192,15 @@ ISR(TIMER_INTERRUPT)
 
   // Interpolate between wavetable[index] and wavetable[index+1]
   uint8_t index = phase8bit + phaseOffset;
-  int8_t valueA = pgm_read_byte_near(wavetable + index);
-  int8_t valueB = pgm_read_byte_near(wavetable + index);
-  int8_t difference = valueB - valueA;
+  int16_t valueA = (int8_t)pgm_read_byte_near(wavetable + index++) * 4;
+  int16_t valueB = (int8_t)pgm_read_byte_near(wavetable + index) * 4;
+  int16_t difference = valueB - valueA;
 
-  int16_t output = valueA + (difference * phaseRemainder / 4);
+  int16_t output = valueA + (difference * (int8_t)phaseRemainder / 4);
 
+#ifdef USE_10_BIT_PWM
   JNTUB::analogWriteOutPrecise(output + 512);
+#else
+  JNTUB::analogWriteOut((output/4) + 128);
+#endif
 }
