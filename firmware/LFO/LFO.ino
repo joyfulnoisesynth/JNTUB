@@ -80,34 +80,6 @@
 // Wavetable data
 #include "Tables.h"
 
-template<typename T, unsigned N>
-class RollingAverage {
-private:
-  T history[1<<N];
-
-public:
-  RollingAverage()
-  {
-    memset(history, 0, sizeof(history));
-  }
-
-  void update(T val)
-  {
-    for (auto i = (1<<N)-1; i > 0; --i) {
-      history[i] = history[i-1];
-    }
-    history[0] = val;
-  }
-
-  T getValue() const
-  {
-    uint32_t result = 0;
-    for (auto i = 0; i < (1<<N); ++i)
-      result += history[i];
-    return result >> N;
-  }
-};
-
 // LFO periods in milliseconds
 const uint32_t PERIOD_CURVE[] = {
   180000,
@@ -140,15 +112,13 @@ JNTUB::DiscreteKnob shapeKnob(NELEM(SHAPES), 5);
 JNTUB::FastClock lfoClock;
 JNTUB::EdgeDetector trigger;
 
-RollingAverage<uint16_t, 5> rateAvg;
-
 // Phase offset set by the PHASE knob.
 uint8_t phaseOffset;
 
 // Wavetable selected by SHAPE knob.
 const int8_t *wavetable;
 
-#define TIMER_RATE JNTUB::SAMPLE_RATE_10_KHZ
+#define TIMER_RATE JNTUB::SAMPLE_RATE_8_KHZ
 
 uint32_t millisToRate(uint32_t ms)
 {
@@ -163,8 +133,13 @@ void setup()
   phaseOffset = 0;
   wavetable = WT_TRIANGLE;
 
-  JNTUB::setUpFastPWM();
   JNTUB::setUpTimerInterrupt(TIMER_RATE);
+
+  // At slow speeds, the 8-bitness of the PWM output becomes quite apparent.
+  // So we'll utilize the JNTUB library's 10-bit PWM procedure.
+  // Since we only store 8-bit values in the wavetables though, we'll have
+  // to interpolate in order to fully utilize those 10 bits.
+  JNTUB::setUp10BitPWM();
 }
 
 void loop()
@@ -193,6 +168,10 @@ void loop()
 
 ISR(TIMER_INTERRUPT)
 {
+  // Re-enable interrupts (they are disabled by default when entering ISRs).
+  // This prevents the timer interrupt from starving the 10-bit PWM generator.
+  interrupts();
+
   lfoClock.update();
 
   bool trgRaw = digitalRead(JNTUB::PIN_GATE_TRG);
@@ -200,10 +179,18 @@ ISR(TIMER_INTERRUPT)
   if (trigger.isRising())
     lfoClock.sync();
 
-  uint8_t phase = lfoClock.getPhase() >> (JNTUB::FastClock::PHASE_BITS - 8);
-  phase += phaseOffset;
+  uint32_t phase = lfoClock.getPhase();
+  uint16_t phase10bit = phase >> (JNTUB::FastClock::PHASE_BITS - 10);
+  uint8_t phase8bit = phase10bit >> 2;
+  uint8_t phaseRemainder = phase10bit - ((uint16_t)phase8bit<<2); // 0 to 3
 
-  int8_t output = pgm_read_byte_near(wavetable + phase);
+  // Interpolate between wavetable[index] and wavetable[index+1]
+  uint8_t index = phase8bit + phaseOffset;
+  int8_t valueA = pgm_read_byte_near(wavetable + index);
+  int8_t valueB = pgm_read_byte_near(wavetable + index);
+  int8_t difference = valueB - valueA;
 
-  JNTUB::analogWriteOut(output + 128);
+  int16_t output = valueA + (difference * phaseRemainder / 4);
+
+  JNTUB::analogWriteOutPrecise(output + 512);
 }
