@@ -158,7 +158,7 @@ public:
       if (curClockPhase < mPrevClockPhase) {
         mState = FALL;
         mClock.setRate(mDecayRate);
-        mClock.sync();
+        mClock.sync(0);
       }
     } else if (mState == FALL) {
       // If clock finished its period, switch to IDLE.
@@ -168,12 +168,33 @@ public:
       }
     }
 
-    uint8_t index = curClockPhase >> (JNTUB::FastClock::PHASE_BITS - 8);
+    // Some of the envelope curves have really jarring and jagged jumps
+    // (especially the super-exponential curves), so when attack/decay times are
+    // long, the output is very noticeably jagged.
+    // To fix that, we'll interpolate between two values points in the curve.
+    // We can do this because FastClock's phase is really granular (32 bits);
+    // it's merely the curve tables that lack granularity.
+
+    uint16_t phase15bit = curClockPhase >> (JNTUB::FastClock::PHASE_BITS - 15);
+    uint8_t phase8bit = phase15bit >> 7;
+    // 7-bit granularity to determine how far in between two curve points
+    // the envelope currently is. We'll use this value to blend between
+    // two values from the curve.
+    uint8_t phaseRemainder = phase15bit - ((uint16_t)phase8bit<<7);
+
+    uint8_t index = phase8bit;
+    uint8_t valueA = mCurve->getValue(index);
+    uint8_t valueB;
+    if (index == 255)
+      valueB = valueA;
+    else
+      valueB = mCurve->getValue(index+1);
+    uint8_t blended = blend(valueA, valueB, phaseRemainder);
 
     if (mState == RISE) {
-      mCurVal = mCurve->getValue(index);
+      mCurVal = blended;
     } else if (mState == FALL) {
-      mCurVal = 255 - mCurve->getValue(index);
+      mCurVal = 255 - blended;
     } else {
       mCurVal = 0;
     }
@@ -234,7 +255,7 @@ public:
 
 // Attack/decay times in microseconds.
 const uint32_t TIME_CURVE[] = {
-  0,
+  100,
   16000,
   48000,
   128000,
@@ -306,12 +327,12 @@ void loop()
 
 ISR(TIMER_INTERRUPT)
 {
-  env.update();
-
   bool trgRaw = digitalRead(JNTUB::PIN_GATE_TRG);
   trigger.update(trgRaw);
   if (trigger.isRising())
     env.trigger();
+
+  env.update();
 
   JNTUB::analogWriteOut(env.getValue());
 }
