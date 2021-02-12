@@ -106,7 +106,15 @@ namespace JNTUB {
    * PWM frequency (250 kHz). Setting that up requires some low-level register
    * manipulation, and using it requires us to write our own analogWrite().
    */
-  void setUpFastPWM();  // call once during setup()
+  enum PWMRate : uint32_t {
+    PWM_RATE_250_KHZ = 250000,
+    PWM_RATE_125_KHZ = 125000,
+    PWM_RATE_62_KHZ = 62500,
+    PWM_RATE_31_KHZ = 31250,
+    PWM_RATE_15_KHZ = 15625,
+    PWM_RATE_7_KHZ = 7812,  // ** 7812.5
+  };
+  void setUpFastPWM(PWMRate rate=PWM_RATE_250_KHZ);  // call once during setup()
   void analogWriteOut(uint8_t value);
   void digitalWriteOut(bool value);
 
@@ -123,8 +131,36 @@ namespace JNTUB {
    * "10 or 12-bit DAC from the ATtiny85"
    * http://www.technoblogy.com/show?1NGL
    *
-   * Assuming you use this in conjunction with setUpFastPWM,
-   * using 10-bit PWM will lower the PWM frequency to 62.5 kHz.
+   * If you look at the implementation, I do something similar but much
+   * more efficient than David's solution, so that I can keep a really
+   * fast PWM rate and still have CPU cycles left over for main program code.
+   *
+   * CAVEATS:
+   *
+   *    If you enable 10-bit PWM, the PWM frequency will be reduced from what
+   *    you would normally get with setUpFastPWM(). But it's still quite fast.
+   *    **I recommend only using it with 16 MHz system clock rate**,
+   *    but you can use it with any of the three clock rates:
+   *      - At 16 MHz system clock: PWM rate is 125 kHz
+   *      - At 8 MHz system clock: PWM rate is 62.5 kHz
+   *      - At 16 MHz system clock: PWM rate is 125 kHz
+   *
+   *    Generating 10-bit PWM uses just under half of the available CPU cycles,
+   *    so expect the effective clock rate to be half of what it is nominally
+   *    (so with 10-bit PWM and 16MHz clock rate, effective clock rate is 8MHz).
+   *
+   * IMPORTANT NOTE IF YOU USE THIS WITH TIMER INTERRUPTS:
+   *
+   *    If you use 10-bit PWM and you have another ISR in your program (like
+   *    TIMER_INTERRUPT), you should probably start the ISR by re-enabling
+   *    interrupts (they are turned off before running the ISR). If you don't,
+   *    your ISR may starve the 10-bit software PWM generator. This isn't
+   *    catastrophic, but it will result in glitchy PWM waveforms.
+   *
+   *    Note that enabling interrupts during an ISR is potentially risky
+   *    business! If your ISR runs for long enough, it is possible that it
+   *    gets triggered again before it finishes, causing wacky recursion.
+   *    Don't let this happen (if you do, let me know how it goes).
    */
   void setUp10BitPWM();  // call once during setup()
   void analogWriteOutPrecise(uint16_t value);

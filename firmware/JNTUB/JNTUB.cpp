@@ -29,6 +29,7 @@
 #include <limits.h>
 
 #include <avr/io.h>
+#include <avr/pgmspace.h>
 #include <Arduino.h>
 
 namespace JNTUB {
@@ -138,7 +139,7 @@ void analogWriteOut(uint8_t value)
  * board (aside from maybe Ariana Grande or a dog whistle).
  */
 
-void setUpFastPWM()
+void setUpFastPWM(PWMRate rate)
 {
 #if defined(__AVR_ATtiny85__)
 
@@ -157,9 +158,26 @@ void setUpFastPWM()
 
   // Timer/Counter1 control status register TCCR1:
   // PWM1A - Enable PWM generator A for Timer/Counter1
+  TCCR1 = 1<<PWM1A;
+
+  // Timer/Counter1 control status register TCCR1:
   // CS1[3:0] - Prescaler select
-  //   - 0001 - Prescaler = 1
-  TCCR1 = 1<<PWM1A | 1<<CS10;
+  switch(rate) {
+    case PWM_RATE_250_KHZ:
+      // CS1[3:0]: 0001 - Prescaler = 1
+      TCCR1 |= 1<<CS10;
+      break;
+    case PWM_RATE_125_KHZ:
+      // CS1[3:0]: 0010 - Prescaler = 2
+      TCCR1 |= 2<<CS10;
+      break;
+    case PWM_RATE_62_KHZ:
+      // CS1[3:0]: 0011 - Prescaler = 4
+      TCCR1 |= 3<<CS10;
+      break;
+     default:
+      break;
+  }
 
 #elif defined(__AVR_ATmega328P__) || defined(__AVR_ATmega328__)
 
@@ -206,36 +224,79 @@ void setUp10BitPWM()
   // TIMSK – Timer/Counter Interrupt Mask Register.
   //  - TOIE1: Timer/Counter1 Overflow Interrupt Enable
   bitSet(TIMSK, TOIE1);
+
+  // Precise PWM requires executing an interrupt service routine on every period
+  // of the PWM generator. That's _really_ frequent. In fact, at 250 kHz PWM
+  // and 8 MHz clock rate, the ISR takes up more than 100% of the CPU time.
+  // So we unfortunately need to reduce the PWM rate if we're going to have
+  // any cycles left over for the actual code.
+  //
+  // The PWM ISR takes around 50 clock cycles, so we need to have at least 64
+  // clock cycles per PWM period if we want _any_ cycles reserved for main
+  // computation. I'm shooting for 128 cycles per period to give even more
+  // headroom. With the ATtiny configured for 16 MHz clock rate, that still
+  // allows for 125 KHz PWM and results in an effective clock rate of just over
+  // 8 MHz.
+#if F_CPU == 16000000
+  // 16 MHz / 125 KHz = 128 cycles
+  setUpFastPWM(PWM_RATE_125_KHZ);
+#elif F_CPU == 8000000
+  // 8 MHz / 62.5 KHz = 128 cycles
+  setUpFastPWM(PWM_RATE_62_KHZ);
+#elif F_CPU == 1000000
+  // 1 MHz / 7812 Hz = ~128 cycles
+  setUpFastPWM(PWM_RATE_7_KHZ);
+#endif // F_CPU
+
 #else
 #error Precise PWM not implemented for this board
 #endif
 }
 
-static volatile uint16_t pwmVal = 0;
+static volatile uint8_t pwmVals[4] = { 0, 0, 0, 0 };
 
 void analogWriteOutPrecise(uint16_t value)
 {
   noInterrupts();
-  pwmVal = value;
+  for (uint8_t i = 0; i < 4; ++i) {
+    if (value > 255) {
+      pwmVals[i] = 255;
+      value -= 256;
+    } else {
+      pwmVals[i] = value;
+      value = 0;
+    }
+  }
   interrupts();
 }
 
+// This is an extremely performance-critical piece of code.
+// Every ISR comes with at minimum 42 cycles of overhead:
+//  4 cycles to save ISP.
+//  3 cycles to JMP to the ISR code.
+//  16 cycle prologue to push registers to stack
+//    (may be as low as 12 if some registers don't need saving).
+//  19 cycle epilogue to pop registers off the stack and return
+//    (may be as low as 15).
+//
+// The code below compiles down to 12 cycles, giving the entire ISR
+// a runtime of no more than 54 cycles.
 ISR(TIMER1_OVF_vect)
 {
-  static int16_t remaining = 0;
   static uint8_t cycle = 0;
 
-  if ((cycle & 0x03) == 0)
-    remaining = pwmVal;
-
-  if (remaining >= 255)
-    OCR1A = 255;
-  else
-    OCR1A = remaining;
-
-  remaining -= 256;
-
-  ++cycle;
+  OCR1A = pwmVals[++cycle & 0x03];
+  // Compiles to:
+  // lds     r30, 0x0060     ; 2 cycles
+  // subi    r30, 0xFF       ; 1 cycle
+  // sts     0x0060, r30     ; 2 cycles
+  // andi    r30, 0x03       ; 1 cycle
+  // ldi     r31, 0x00       ; 1 cycle
+  // subi    r30, 0x1B       ; 1 cycle
+  // sbci    r31, 0xFF       ; 1 cycle
+  // ld      r24, Z          ; 2 cycles
+  // out     0x2e, r24       ; 1 cycle
+  //                         ; = 12 cycles
 }
 
 /**
