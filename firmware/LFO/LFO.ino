@@ -82,6 +82,8 @@
 
 #define USE_10_BIT_PWM
 
+#define TIMER_RATE JNTUB::SAMPLE_RATE_8_KHZ
+
 // LFO periods in milliseconds
 const uint32_t PERIOD_CURVE[] = {
   180000,
@@ -111,26 +113,18 @@ const int8_t *const SHAPES[] = {
 JNTUB::CurveKnob<uint32_t> rateKnob(PERIOD_CURVE, NELEM(PERIOD_CURVE));
 JNTUB::DiscreteKnob shapeKnob(NELEM(SHAPES), 5);
 
-JNTUB::FastClock lfoClock;
+JNTUB::FastClock lfoClock(TIMER_RATE);
 JNTUB::EdgeDetector trigger;
 
 // Phase offset set by the PHASE knob.
-uint8_t phaseOffset;
+volatile uint8_t phaseOffset;
 
 // Wavetable selected by SHAPE knob.
-const int8_t *wavetable;
-
-#define TIMER_RATE JNTUB::SAMPLE_RATE_8_KHZ
-
-uint32_t millisToRate(uint32_t ms)
-{
-  return JNTUB::FastClock::millisToRate(ms, TIMER_RATE);
-}
+volatile const int8_t *wavetable;
 
 void setup()
 {
   lfoClock.start();
-  lfoClock.setRate(millisToRate(140));
 
   phaseOffset = 0;
   wavetable = WT_TRIANGLE;
@@ -155,21 +149,20 @@ void loop()
   uint16_t rateRaw = analogRead(JNTUB::PIN_PARAM1);
 
   shapeKnob.update(shapeRaw);
-
-  /* rateAvg.update(rateRaw); */
-  /* rateKnob.update(rateAvg.getValue()); */
   rateKnob.update(rateRaw);
 
   uint32_t periodMs = rateKnob.getValue();
-  uint32_t rate = millisToRate(periodMs);
-  noInterrupts();
-  lfoClock.setRate(rate);
-  interrupts();
+  uint32_t rate = lfoClock.microsToRate(periodMs * 1000);
 
-  phaseOffset = map(phaseRaw, 0, 1023, 0, 255);
+  uint8_t phase = map(phaseRaw, 0, 1023, 0, 255);
 
   uint8_t shapeSelect = shapeKnob.getValue();
+
+  noInterrupts();
+  lfoClock.setRate(rate);
+  phaseOffset = phase;
   wavetable = SHAPES[shapeSelect];
+  interrupts();
 }
 
 ISR(TIMER_INTERRUPT)

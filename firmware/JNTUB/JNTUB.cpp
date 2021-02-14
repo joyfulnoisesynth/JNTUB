@@ -676,28 +676,25 @@ void Clock::update(uint32_t time)
  * ============================================================================
  */
 
-uint32_t FastClock::microsToRate(uint32_t micros, uint32_t sampleRate)
+FastClock::FastClock(uint16_t updateRateHz)
 {
-  // Phase should advance this much per microsecond:
-  uint32_t ratePerMicro = PHASE_MAX / micros;
-  // And one sample takes this many microseconds:
-  uint32_t microsPerSample = 1000000UL / sampleRate;
-  // So this much phase should advance each sample:
-  return ratePerMicro * microsPerSample;
-}
+  // 16-bit microsPerSample limits sample rate to 16 Hz
+  // (1,000,000 / 15 = 66,666; 1,000,000 / 16 = 62,500).
+  updateRateHz = constrain(updateRateHz, 16, UINT16_MAX);
+  mMicrosPerUpdate = 1000000UL / updateRateHz;
 
-uint32_t FastClock::millisToRate(uint32_t millis, uint32_t sampleRate)
-{
-  return microsToRate(millis * 1000, sampleRate);
-}
-
-FastClock::FastClock(uint32_t rate=0)
-{
-  mRate = rate;
+  mRate = 0;
   mDuty = PHASE_MAX / 2;
+  mCycles = 0;
   mCurPhase = 0;
   mRunning = false;
-  mPrevState = 0;
+  mPrevState = false;
+}
+
+uint32_t FastClock::microsToRate(uint32_t micros)
+{
+  uint32_t phasePerMicro = PHASE_MAX / micros;
+  return mMicrosPerUpdate * phasePerMicro;
 }
 
 uint32_t FastClock::getRate() const
@@ -710,11 +707,6 @@ void FastClock::setRate(uint32_t rate)
   mRate = rate;
 }
 
-uint32_t FastClock::getPhase() const
-{
-  return mCurPhase;
-}
-
 uint32_t FastClock::getDuty() const
 {
   return mDuty;
@@ -725,19 +717,9 @@ void FastClock::setDuty(uint32_t duty)
   mDuty = duty;
 }
 
-bool FastClock::getState() const
+uint32_t FastClock::getNumCycles() const
 {
-  return mCurPhase < mDuty;
-}
-
-bool FastClock::isRising() const
-{
-  return getState() & !mPrevState;
-}
-
-bool FastClock::isFalling() const
-{
-  return !getState() & mPrevState;
+  return mCycles;
 }
 
 void FastClock::start()
@@ -755,13 +737,35 @@ void FastClock::sync(uint32_t phase=0)
   mCurPhase = phase;
 }
 
+bool FastClock::getState() const
+{
+  return mCurPhase < mDuty;
+}
+
+bool FastClock::isRising() const
+{
+  return getState() & !mPrevState;
+}
+
+bool FastClock::isFalling() const
+{
+  return !getState() & mPrevState;
+}
+
+uint32_t FastClock::getPhase() const
+{
+  return mCurPhase;
+}
+
 void FastClock::update()
 {
   if (mRunning) {
     mPrevState = getState();
     mCurPhase += mRate;
-    if (mCurPhase >= PHASE_MAX)
+    if (mCurPhase >= PHASE_MAX) {
       mCurPhase -= PHASE_MAX;
+      ++mCycles;
+    }
   }
 }
 

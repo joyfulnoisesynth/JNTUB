@@ -75,11 +75,6 @@
 
 #define TIMER_RATE JNTUB::SAMPLE_RATE_10_KHZ
 
-uint32_t microsToRate(uint32_t us)
-{
-  return JNTUB::FastClock::microsToRate(us, TIMER_RATE);
-}
-
 /**
  * Blends between two values with no divides.
  * For blend=0, returns a
@@ -108,9 +103,9 @@ private:
   const CurveT *mCurve;
 
   JNTUB::FastClock mClock;
-  uint32_t mPrevClockPhase;
-  uint32_t mAttackRate;
-  uint32_t mDecayRate;
+  volatile uint32_t mAttackRate;
+  volatile uint32_t mDecayRate;
+  uint32_t mPrevClockCycles;
   uint8_t mCurVal;
   enum {
     IDLE,
@@ -119,10 +114,10 @@ private:
   } mState;
 
 public:
-  Envelope(const CurveT *curve)
+  Envelope(const CurveT *curve) : mClock(TIMER_RATE)
   {
     mCurve = curve;
-    mPrevClockPhase = 0;
+    mPrevClockCycles = 0;
     mAttackRate = 0;
     mDecayRate = 0;
     mCurVal = 0;
@@ -131,42 +126,50 @@ public:
 
   void setAttack(uint32_t attackMicros)
   {
-    mAttackRate = microsToRate(attackMicros);
+    uint32_t rate = mClock.microsToRate(attackMicros);
+    noInterrupts();
+    mAttackRate = rate;
+    interrupts();
   }
 
   void setDecay(uint32_t decayMicros)
   {
-    mDecayRate = microsToRate(decayMicros);
+    uint32_t rate = mClock.microsToRate(decayMicros);
+    noInterrupts();
+    mDecayRate = rate;
+    interrupts();
   }
 
   inline void trigger()
   {
     mState = RISE;
+    noInterrupts();
     mClock.setRate(mAttackRate);
     mClock.sync();
     mClock.start();
+    interrupts();
   }
 
   inline void update()
   {
-    mPrevClockPhase = mClock.getPhase();
     mClock.update();
-    uint32_t curClockPhase = mClock.getPhase();
+    uint32_t curCycles = mClock.getNumCycles();
 
     if (mState == RISE) {
       // If clock finished its period, switch to FALL.
-      if (curClockPhase < mPrevClockPhase) {
+      if (curCycles > mPrevClockCycles) {
         mState = FALL;
         mClock.setRate(mDecayRate);
         mClock.sync(0);
       }
     } else if (mState == FALL) {
       // If clock finished its period, switch to IDLE.
-      if (curClockPhase < mPrevClockPhase) {
+      if (curCycles > mPrevClockCycles) {
         mState = IDLE;
         mClock.stop();
       }
     }
+    mPrevClockCycles = mClock.getNumCycles();
 
     // Some of the envelope curves have really jarring and jagged jumps
     // (especially the super-exponential curves), so when attack/decay times are
@@ -175,7 +178,7 @@ public:
     // We can do this because FastClock's phase is really granular (32 bits);
     // it's merely the curve tables that lack granularity.
 
-    uint16_t phase15bit = curClockPhase >> (JNTUB::FastClock::PHASE_BITS - 15);
+    uint16_t phase15bit = mClock.getPhase() >> (JNTUB::FastClock::PHASE_BITS - 15);
     uint8_t phase8bit = phase15bit >> 7;
     // 7-bit granularity to determine how far in between two curve points
     // the envelope currently is. We'll use this value to blend between
@@ -319,10 +322,8 @@ void loop()
 
   attackKnob.update(attackRaw);
   decayKnob.update(decayRaw);
-  noInterrupts();
   env.setAttack(attackKnob.getValue());
   env.setDecay(decayKnob.getValue());
-  interrupts();
 }
 
 ISR(TIMER_INTERRUPT)

@@ -395,47 +395,67 @@ namespace JNTUB {
   /**
    * A more performance-sensitive clock. Meant to be updated on a regular
    * timer interrupt.
-   *
-   * NOTE: INTERRUPTS MUST BE DISABLED WHILE MODIFYING FIELDS OF THIS CLASS.
    */
   class FastClock {
     private:
-      // 32-bit phase accumulator
+      // Phase accumulator
       uint32_t mCurPhase;
       // How much phase advances per update
-      uint32_t mRate;
-      uint32_t mDuty;
-      uint8_t mRunning: 1,
-              mPrevState: 1;
+      volatile uint32_t mRate;
+      // Phase at which the clock switches from high to low
+      volatile uint32_t mDuty;
+      // How many periods the clock has completed since construction
+      volatile uint32_t mCycles;
+      // How many microseconds elapse per update
+      uint16_t mMicrosPerUpdate;
+      // Whether or not the clock is advancing
+      bool mRunning: 1;
+      // What state the clock was in last update
+      bool mPrevState: 1;
 
     public:
-      FastClock(uint32_t rate=0);
+      // The clock's phase has 30-bit granularity.
+      // The phase advances from 0 to 2^30 - 1 and then wraps around to start
+      // the next period.
+      static const uint8_t PHASE_BITS = 30;
+      static const uint32_t PHASE_MAX = (uint32_t)1<<PHASE_BITS;
+
+      // Construct the FastClock specifying how frequently it will be updated.
+      FastClock(uint16_t updateRateHz);
+
+      /* ----------------------------------------------- */
+      /* Callable from main code with interrupts enabled */
+      /* ----------------------------------------------- */
+
+      uint32_t microsToRate(uint32_t micros);
+
+      /* ------------------------------------------------ */
+      /* Callable from main code with interrupts disabled */
+      /* ------------------------------------------------ */
 
       uint32_t getRate() const;
       void     setRate(uint32_t rate);
-
-      // Helper functions to convert from milli/microseconds to clock rate,
-      // assuming that the clock is being update()-ed at the given sampleRate.
-      static uint32_t microsToRate(uint32_t micros, uint32_t sampleRate);
-      static uint32_t millisToRate(uint32_t millis, uint32_t sampleRate);
-
-      static const uint8_t PHASE_BITS = 30;
-      static const uint32_t PHASE_MAX = (uint32_t)1<<PHASE_BITS;
-      uint32_t getPhase() const;
 
       // Clock is high when 0 <= phase < duty.
       // Clock is low when duty <= phase < PHASE_MAX.
       uint32_t getDuty() const;
       void     setDuty(uint32_t duty);
 
-      bool     getState() const;
-      bool     isRising() const;
-      bool     isFalling() const;
+      uint32_t getNumCycles() const;
 
-      // NOTE: call update() before modifying clock parameters
       void     start();
       void     stop();
       void     sync(uint32_t phase=0);
+
+      /* ------------------------------------ */
+      /* Only callable during timer interrupt */
+      /* ------------------------------------ */
+
+      uint32_t getPhase() const;
+
+      bool     getState() const;
+      bool     isRising() const;
+      bool     isFalling() const;
 
       void update();
   };
