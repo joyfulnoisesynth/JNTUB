@@ -68,15 +68,20 @@ namespace JNTUB {
 
 #if defined(__AVR_ATtiny85__)
 
-#ifdef HW_VER_0_1
+#if defined(HW_VER_0_1)
   static const uint8_t PIN_PARAM1    = A2;  // ADC2, chip pin 3
   static const uint8_t PIN_PARAM2    = A1;  // ADC1, chip pin 7
-#else
+  static const uint8_t PIN_PARAM3    = A3;  // ADC3, chip pin 2
+#elif defined(HW_VER_0_2)
   static const uint8_t PIN_PARAM1    = A1;  // ADC1, chip pin 7
   static const uint8_t PIN_PARAM2    = A2;  // ADC2, chip pin 3
+  static const uint8_t PIN_PARAM3    = A3;  // ADC3, chip pin 2
+#else
+  static const uint8_t PIN_PARAM1    = A1;  // ADC1, chip pin 7
+  static const uint8_t PIN_PARAM2    = A3;  // ADC3, chip pin 2
+  static const uint8_t PIN_PARAM3    = A2;  // ADC2, chip pin 3
 #endif
 
-  static const uint8_t PIN_PARAM3    = A3;  // ADC3, chip pin 2
   static const uint8_t PIN_GATE_TRG  = 0;   // PB0, chip pin 5
 
 #elif defined(__AVR_ATmega328P__) || defined(__AVR_ATmega328__)
