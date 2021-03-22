@@ -11,7 +11,8 @@
 ### LFO
 - [x] Initial implementation
 - [x] 10-bit PWM
-- [ ] Automatic clock detection
+- [x] Automatic clock detection
+- [ ] Fix buggy clock tracking
 - [ ] Allow control of amplitude
 
 ### VCO

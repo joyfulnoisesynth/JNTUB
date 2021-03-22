@@ -20,9 +20,9 @@
   File:        LFO.ino
   Description: Syncable LFO with Waveshape Select in 4HP
 
-  This is a simple LFO generator with voltage control over rate and phase and
+  This is an LFO generator with voltage control over rate and phase and
   manual control of waveshape. The LFO can be reset by a trigger or a gate, or
-  it can be synchronized to an incoming clock signal.
+  it can be synchronized to a multiple or division of an incoming clock signal.
 
   ----------
   PARAMETERS
@@ -47,7 +47,7 @@
     (see GATE/TRG):
 
     In Normal Mode:
-      Varies the rate from around 100 Hz (at 100%) to around 1 minute cycle time
+      Varies the rate from around 100 Hz (at 100%) to around 3 minute cycle time
       (at 0%).
 
     In Clocked Mode:
@@ -84,22 +84,37 @@
 
 #define TIMER_RATE JNTUB::SAMPLE_RATE_8_KHZ
 
-// LFO periods in milliseconds
+// LFO periods in microseconds (for free-running mode)
 const uint32_t PERIOD_CURVE[] = {
-  180000,
-  90000,
-  50000,
-  20000,
-  9000,
-  5000,
-  2000,
-  900,
-  500,
-  250,
-  167,
-  100,
-  25,
-  10,
+  180000000, // 3 min
+  90000000,  // 90 sec
+  50000000,  // 50 sec
+  20000000,  // 20 sec
+  9000000,   // 9 sec
+  5000000,   // 5 sec
+  2000000,   // 2 sec
+  900000,    // 900 ms
+  500000,    // 500 ms (2 Hz)
+  250000,    // 250 ms (4 Hz)
+  167000,    // 167 ms (6 Hz)
+  100000,    // 100 ms (10 Hz)
+  25000,     // 25 ms  (40 Hz)
+  10000,     // 10 ms  (100 Hz)
+};
+
+// Clock multipliers (for synchronized mode)
+const uint8_t MULTIPLIERS[] = {
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  8,
+  16,
+  32,
+  64,
+  128,
 };
 
 const int8_t *const SHAPES[] = {
@@ -111,10 +126,18 @@ const int8_t *const SHAPES[] = {
 };
 
 JNTUB::CurveKnob<uint32_t> rateKnob(PERIOD_CURVE, NELEM(PERIOD_CURVE));
+
+JNTUB::DiscreteKnob multiplyKnob(NELEM(MULTIPLIERS), 5);
+JNTUB::DiscreteKnob divideKnob(NELEM(MULTIPLIERS), 5);
+// These help ensure we don't sync() the LFO partway through its period
+// when its running off a divided input signal.
+uint8_t division;  // 0 if not in divide mode
+uint8_t divides;   // number of periods that have passed
+
 JNTUB::DiscreteKnob shapeKnob(NELEM(SHAPES), 5);
 
 JNTUB::FastClock lfoClock(TIMER_RATE);
-JNTUB::EdgeDetector trigger;
+JNTUB::ClockDetector clockDetector(TIMER_RATE);
 
 // Phase offset set by the PHASE knob.
 volatile uint8_t phaseOffset;
@@ -148,14 +171,36 @@ void loop()
   uint16_t phaseRaw = analogRead(JNTUB::PIN_PARAM2);
   uint16_t rateRaw = analogRead(JNTUB::PIN_PARAM1);
 
+  uint32_t rate;
+  if (clockDetector.isClock()) {
+    // We have determined that the input signal is a clock signal.
+    // Synchronize the LFO to this clock signal.
+    uint32_t _duty;
+    clockDetector.getRateAndDuty(&rate, &_duty);
+
+    // Multiply or divide the rate depending on the knob position.
+    if (rateRaw < 512) {
+      divideKnob.update(1023 - (rateRaw * 2));
+      division = MULTIPLIERS[divideKnob.getValue()];
+      rate = rate >> division;
+    } else {
+      multiplyKnob.update((rateRaw - 511) * 2);
+      rate = rate << MULTIPLIERS[multiplyKnob.getValue()];
+
+      division = 0;  // not dividing
+    }
+  } else {
+    // The input signal is not a clock signal. LFO is free-running.
+    rateKnob.update(rateRaw);
+    uint32_t periodMicros = rateKnob.getValue();
+    rate = lfoClock.microsToRate(periodMicros);
+
+    division = 0;  // not in clocked mode
+  }
+
+  uint8_t phase = phaseRaw >> 2;
+
   shapeKnob.update(shapeRaw);
-  rateKnob.update(rateRaw);
-
-  uint32_t periodMs = rateKnob.getValue();
-  uint32_t rate = lfoClock.microsToRate(periodMs * 1000);
-
-  uint8_t phase = map(phaseRaw, 0, 1023, 0, 255);
-
   uint8_t shapeSelect = shapeKnob.getValue();
 
   noInterrupts();
@@ -171,12 +216,16 @@ ISR(TIMER_INTERRUPT)
   // This prevents the timer interrupt from starving the 10-bit PWM generator.
   interrupts();
 
-  lfoClock.update();
+  lfoClock.tick();
 
-  bool trgRaw = digitalRead(JNTUB::PIN_GATE_TRG);
-  trigger.update(trgRaw);
-  if (trigger.isRising())
-    lfoClock.sync();
+  bool gate = digitalRead(JNTUB::PIN_GATE_TRG);
+  clockDetector.tick(gate);
+  if (clockDetector.isRising()) {
+    if (++divides >= division) {
+      lfoClock.sync();
+      divides = 0;
+    }
+  }
 
   uint32_t phase = lfoClock.getPhase();
   uint16_t phase10bit = phase >> (JNTUB::FastClock::PHASE_BITS - 10);
