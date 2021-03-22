@@ -199,6 +199,14 @@ namespace JNTUB {
 
   /*
    * =======================================================================
+   * UTILITY FUNCTIONS
+   * =======================================================================
+   */
+
+  #define absdiff(a, b) ((a < b) ? (b - a) : (a - b))
+
+  /*
+   * =======================================================================
    * UTILITY CLASSES
    * =======================================================================
    */
@@ -311,6 +319,48 @@ namespace JNTUB {
       return mSegmentKnob.getValueRaw();
     }
   };
+
+  /**
+   * Indexable, FIFO ring buffer.
+   */
+  template<typename T, unsigned N>
+  class RingBuffer {
+  private:
+    T buf[N];
+    uint16_t front;
+
+  public:
+    RingBuffer()
+    {
+      front = 0;
+    }
+
+    inline void fill(T value)
+    {
+      memset(&buf[0], 0, N * sizeof(T));
+    }
+
+    inline T & extend()
+    {
+      ++front;
+      if (front >= N)
+        front = 0;
+      return buf[front];
+    }
+
+    inline void push(T item)
+    {
+      extend() = item;
+    }
+
+    inline T & operator[](uint16_t i)
+    {
+       if (i > front)
+         return buf[N-(i-front)];
+       return buf[front-i];
+    }
+  };
+
 
   /**
    * Simple class, reports rising and falling edges.
@@ -469,6 +519,186 @@ namespace JNTUB {
       bool     isFalling() const;
 
       void     tick();
+  };
+
+  /**
+    * A more performance-sensitive stopwatch. Meant to be updated on a regular
+    * timer interrupt.
+    */
+  class FastStopwatch {
+  private:
+    // How many microseconds elapse per tick
+    const uint16_t mMicrosPerTick;
+    // How many ticks the stopwatch has gone through since last reset
+    volatile uint32_t mTicks;
+    // Whether the stopwatch is advancing
+    bool mRunning;
+
+  public:
+    // Construct the FastStopwatch specifying how frequently it will be updated.
+    FastStopwatch(uint16_t tickRateHz);
+
+    /* ----------------------------------------------- */
+    /* Callable from main code with interrupts enabled */
+    /* ----------------------------------------------- */
+
+    uint16_t getMicrosPerTick() const;
+
+    // **SLOW** (32-bit multiply)
+    uint32_t getTimeMicros() const;
+
+    /* ---------------------------------------------------------------- */
+    /* Callable during timer interrupt, or when interrupts are disabled */
+    /* ---------------------------------------------------------------- */
+
+    void     start();
+    void     stop();
+    void     reset();
+
+    uint32_t getNumTicks() const;
+
+    /* ------------------------------------ */
+    /* Only callable during timer interrupt */
+    /* ------------------------------------ */
+
+    void     tick();
+
+  };
+
+  /**
+   * Uses the elapsed time between rising and falling edges of an input signal
+   * to approximate its period and duty cycle.
+   *
+   * For example, here is how to use this class to synchronize a FastClock
+   * (fastClock) to some incoming gate signal (gate):
+   *
+   *    timer interrupt:
+   *      approximator.tick(gate);
+   *      // This keeps the FastClock's edges in lockstep with the input signal.
+   *      if (approximator.isRising())
+   *        fastClock.sync(0);
+   *      else if (approximator.isFalling())
+   *        fastClock.sync(fastClock.getDuty());
+   *
+   *    main code:
+   *      uint32_t rate, duty;
+   *      approximator.calculateRateAndDuty(&rate, &duty);
+   *      // This makes the FastClock's phase roughly track that of the input.
+   *      noInterrupts();
+   *      fastClock.setRate(rate);
+   *      fastClock.setDuty(duty);
+   *      interrupts();
+   */
+  class FastClockApproximator {
+  private:
+    FastStopwatch mStopwatch;
+    EdgeDetector mEdgeDetector;
+    // Number of ticks for which the input signal was high during its last
+    // completed period.
+    volatile uint32_t mHighTicks;
+    // Number of ticks for which the input signal was low during its last
+    // completed period.
+    volatile uint32_t mLowTicks;
+    // Store the number of high ticks here until the current period ends.
+    uint32_t mTmpTicks;
+
+  public:
+    FastClockApproximator(uint16_t tickRateHz);
+
+    /* ----------------------------------------------- */
+    /* Callable from main code with interrupts enabled */
+    /* ----------------------------------------------- */
+
+    // **SLOW** (32-bit divide and multiply)
+    void calculateRateAndDuty(uint32_t *rateOut, uint32_t *dutyOut) const;
+
+    /* ---------------------------------------------------------------- */
+    /* Callable during timer interrupt, or when interrupts are disabled */
+    /* ---------------------------------------------------------------- */
+
+    bool     isRising() const;
+    bool     isFalling() const;
+
+    uint32_t getHighTicks() const;
+    uint32_t getLowTicks() const;
+
+    /* ------------------------------------ */
+    /* Only callable during timer interrupt */
+    /* ------------------------------------ */
+
+    void     tick(bool gate);
+
+  };
+
+  /**
+   * Takes an incoming signal and uses some heuristics to determine whether the
+   * signal is a repeating clock signal or just a series of unrelated
+   * gates/triggers.
+   *
+   * The signal will be recognized as a clock signal if:
+   *  - There are 3 consecutive periods with roughly* the same length, AND
+   *  - The duty cycle of all 3 periods is greater than some threshold (1/8)
+   *
+   *  * See MARGIN_OF_ERROR_MICROS.
+   *
+   * Once the input signal has been recognized as a clock signal, it won't
+   * be unrecognized until:
+   *  - The input signal fails to go high again for more than 4 periods, or for
+   *      more than 2 seconds, whichever is longer.
+   */
+  class ClockDetector {
+  private:
+    FastClockApproximator mApproximator;
+
+    // The number of ticks that elapse in one millisecond.
+    const uint8_t mTicksPerMillis;
+
+    // Number of ticks for which the input was high during the last period
+    uint32_t mPrevHighTicks;
+    // Number of ticks for which the input was low during the last period
+    uint32_t mPrevLowTicks;
+
+    // Counts the number of ticks that have elapsed since the last rising
+    // edge of the input signal.
+    uint32_t mTicksInPeriod;
+
+    mutable bool mIsClock;
+
+    // When mIsClock is false, this counts the number of periods in a row that
+    // have been roughly the same length and whose duty cycle has been
+    // sufficiently large.
+    uint8_t mNumGoodPeriods;
+
+    // MARGIN_OF_ERROR_MILLIS = 32 (i.e., 2^5)
+    static const uint8_t MARGIN_OF_ERROR_BITS = 5;
+
+  public:
+    ClockDetector(uint16_t tickRateHz);
+
+    /* ----------------------------------------------- */
+    /* Callable from main code with interrupts enabled */
+    /* ----------------------------------------------- */
+
+    bool isClock() const;
+
+    // **SLOW** (32-bit divide and multiply)
+    void getRateAndDuty(uint32_t *rateOut, uint32_t *dutyOut) const;
+
+    /* ---------------------------------------------------------------- */
+    /* Callable during timer interrupt, or when interrupts are disabled */
+    /* ---------------------------------------------------------------- */
+
+    bool isRising() const;
+    bool isFalling() const;
+
+    /* ------------------------------------ */
+    /* Only callable during timer interrupt */
+    /* ------------------------------------ */
+
+    void tick(bool gate);
+
+  private:
+    bool mostRecentPeriodWasGood() const;
   };
 
 }  //JNTUB

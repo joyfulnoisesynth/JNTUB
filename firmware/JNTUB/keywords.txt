@@ -11,3 +11,6 @@ EdgeDetector	KEYWORD1
 Stopwatch	KEYWORD1
 Clock	KEYWORD1
 FastClock	KEYWORD1
+FastStopwatch	KEYWORD1
+FastClockApproximator	KEYWORD1
+ClockDetector	KEYWORD1

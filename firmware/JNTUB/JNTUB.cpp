@@ -779,4 +779,212 @@ void FastClock::tick()
   }
 }
 
+/**
+ * ============================================================================
+ * FastStopwatch
+ * ============================================================================
+ */
+
+FastStopwatch::FastStopwatch(uint16_t tickRateHz)
+  :mMicrosPerTick(FastClock::calculateMicrosPerTick(tickRateHz))
+{
+  stop();
+  reset();
+}
+
+uint16_t FastStopwatch::getMicrosPerTick() const
+{
+  return mMicrosPerTick;
+}
+
+uint32_t FastStopwatch::getTimeMicros() const
+{
+  noInterrupts();
+  uint32_t ticks = mTicks;
+  interrupts();
+  return ticks * mMicrosPerTick;
+}
+
+void FastStopwatch::start()
+{
+  mRunning = true;
+}
+
+void FastStopwatch::stop()
+{
+  mRunning = false;
+}
+
+void FastStopwatch::reset()
+{
+  mTicks = 0;
+}
+
+void FastStopwatch::tick()
+{
+  ++mTicks;
+}
+
+uint32_t FastStopwatch::getNumTicks() const
+{
+  return mTicks;
+}
+
+/**
+ * ============================================================================
+ * FastClockApproximator
+ * ============================================================================
+ */
+
+FastClockApproximator::FastClockApproximator(uint16_t tickRateHz)
+  : mStopwatch(tickRateHz)
+{
+  mHighTicks = 0;
+  mLowTicks = 0;
+  mTmpTicks = 0;
+  mStopwatch.start();
+}
+
+void FastClockApproximator::calculateRateAndDuty(
+    uint32_t *rateOut, uint32_t *dutyOut) const
+{
+  noInterrupts();
+  uint32_t highTicks = mHighTicks;
+  uint32_t lowTicks = mLowTicks;
+  interrupts();
+
+  uint32_t periodLength = highTicks + lowTicks;
+  uint32_t clockRate = FastClock::PHASE_MAX / periodLength;
+  uint32_t duty = clockRate * highTicks;
+
+  *rateOut = clockRate;
+  *dutyOut = duty;
+}
+
+bool FastClockApproximator::isRising() const
+{
+  return mEdgeDetector.isRising();
+}
+
+bool FastClockApproximator::isFalling() const
+{
+  return mEdgeDetector.isFalling();
+}
+
+uint32_t FastClockApproximator::getHighTicks() const
+{
+  return mHighTicks;
+}
+
+uint32_t FastClockApproximator::getLowTicks() const
+{
+  return mLowTicks;
+}
+
+void FastClockApproximator::tick(bool gate)
+{
+  mStopwatch.tick();
+  mEdgeDetector.update(gate);
+
+  if (mEdgeDetector.isRising()) {
+    // Rising edge
+    mHighTicks = mTmpTicks;
+    mLowTicks = mStopwatch.getNumTicks();
+    mStopwatch.reset();
+  } else if (mEdgeDetector.isFalling()) {
+    // Falling edge
+    mTmpTicks = mStopwatch.getNumTicks();
+    mStopwatch.reset();
+  }
+}
+
+/**
+ * ============================================================================
+ * ClockDetector
+ * ============================================================================
+ */
+
+ClockDetector::ClockDetector(uint16_t tickRateHz)
+  : mApproximator(tickRateHz), mTicksPerMillis(tickRateHz / 1000)
+{
+  mPrevHighTicks = 0;
+  mPrevLowTicks = 0;
+  mTicksInPeriod = 0;
+  mIsClock = false;
+  mNumGoodPeriods = 0;
+}
+
+bool ClockDetector::isClock() const
+{
+  return mIsClock;
+}
+
+void ClockDetector::getRateAndDuty(uint32_t *rateOut, uint32_t *dutyOut) const
+{
+  return mApproximator.calculateRateAndDuty(rateOut, dutyOut);
+}
+
+bool ClockDetector::isRising() const
+{
+  return mApproximator.isRising();
+}
+
+bool ClockDetector::isFalling() const
+{
+  return mApproximator.isFalling();
+}
+
+void ClockDetector::tick(bool gate)
+{
+  mApproximator.tick(gate);
+
+  if (!mIsClock) {
+    // Determine if we should recognize the input as a clock signal.
+    if (mApproximator.isRising()) {
+      // A period just completed. See if it was good.
+      if (mostRecentPeriodWasGood())
+        ++mNumGoodPeriods;
+      else
+        mNumGoodPeriods = 1;
+
+      if (mNumGoodPeriods >= 3)
+        mIsClock = true;
+    }
+  } else {
+    // Determine if we should stop recognizing the input as a clock signal.
+    ++mTicksInPeriod;
+    uint32_t fourPeriods = (mPrevHighTicks + mPrevLowTicks) << 2;
+    uint32_t twoSeconds = (uint32_t)mTicksPerMillis << 11;  // ticks * 2048
+    uint32_t threshold = max(fourPeriods, twoSeconds);
+    if (mTicksInPeriod >= threshold)
+      mIsClock = false;
+  }
+
+  if (mApproximator.isRising()) {
+    mTicksInPeriod = 0;
+    mPrevHighTicks = mApproximator.getHighTicks();
+    mPrevLowTicks = mApproximator.getLowTicks();
+  }
+}
+
+bool ClockDetector::mostRecentPeriodWasGood() const
+{
+  // Get stats from the period that just finished.
+  uint32_t highTicks = mApproximator.getHighTicks();
+  uint32_t lowTicks = mApproximator.getLowTicks();
+
+  // Period length must be roughly the same as the previous period.
+  uint32_t thisPeriod = highTicks + lowTicks;
+  uint32_t lastPeriod = mPrevHighTicks + mPrevLowTicks;
+  uint32_t lengthDifference = absdiff(thisPeriod, lastPeriod);
+  if (lengthDifference > ((uint32_t)mTicksPerMillis << MARGIN_OF_ERROR_BITS))
+    return false;
+
+  // Duty cycle must have been at least 1/8 of the period.
+  if (highTicks < (thisPeriod >> 3))
+    return false;
+
+  return true;
+}
+
 }  //JNTUB
