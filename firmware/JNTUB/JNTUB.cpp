@@ -676,13 +676,9 @@ void Clock::update(uint32_t time)
  * ============================================================================
  */
 
-FastClock::FastClock(uint16_t updateRateHz)
+FastClock::FastClock(uint16_t tickRateHz)
+  : mMicrosPerTick(calculateMicrosPerTick(tickRateHz))
 {
-  // 16-bit microsPerSample limits sample rate to 16 Hz
-  // (1,000,000 / 15 = 66,666; 1,000,000 / 16 = 62,500).
-  updateRateHz = constrain(updateRateHz, 16, UINT16_MAX);
-  mMicrosPerUpdate = 1000000UL / updateRateHz;
-
   mRate = 0;
   mDuty = PHASE_MAX / 2;
   mCycles = 0;
@@ -691,10 +687,23 @@ FastClock::FastClock(uint16_t updateRateHz)
   mPrevState = false;
 }
 
-uint32_t FastClock::microsToRate(uint32_t micros)
+uint16_t FastClock::calculateMicrosPerTick(uint16_t tickRateHz)
+{
+  // 16-bit microsPerTick limits minimum sample rate to 16 Hz
+  // (1,000,000 / 15 = 66,666; 1,000,000 / 16 = 62,500).
+  tickRateHz = constrain(tickRateHz, 16, UINT16_MAX);
+  return 1000000UL / tickRateHz;
+}
+
+uint16_t FastClock::getMicrosPerTick() const
+{
+  return mMicrosPerTick;
+}
+
+uint32_t FastClock::microsToRate(uint32_t micros) const
 {
   uint32_t phasePerMicro = PHASE_MAX / micros;
-  return mMicrosPerUpdate * phasePerMicro;
+  return mMicrosPerTick * phasePerMicro;
 }
 
 uint32_t FastClock::getRate() const
@@ -734,6 +743,7 @@ void FastClock::stop()
 
 void FastClock::sync(uint32_t phase=0)
 {
+  phase = phase & (PHASE_MAX-1);
   mCurPhase = phase;
 }
 
@@ -757,7 +767,7 @@ uint32_t FastClock::getPhase() const
   return mCurPhase;
 }
 
-void FastClock::update()
+void FastClock::tick()
 {
   if (mRunning) {
     mPrevState = getState();

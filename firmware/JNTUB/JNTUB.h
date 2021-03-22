@@ -403,19 +403,19 @@ namespace JNTUB {
    */
   class FastClock {
     private:
+      // How many microseconds elapse per tick
+      const uint16_t mMicrosPerTick;
       // Phase accumulator
       uint32_t mCurPhase;
-      // How much phase advances per update
+      // Sets how much phase accumulates per tick
       volatile uint32_t mRate;
       // Phase at which the clock switches from high to low
       volatile uint32_t mDuty;
       // How many periods the clock has completed since construction
       volatile uint32_t mCycles;
-      // How many microseconds elapse per update
-      uint16_t mMicrosPerUpdate;
       // Whether or not the clock is advancing
       bool mRunning: 1;
-      // What state the clock was in last update
+      // What state the clock was in last tick
       bool mPrevState: 1;
 
     public:
@@ -426,17 +426,23 @@ namespace JNTUB {
       static const uint32_t PHASE_MAX = (uint32_t)1<<PHASE_BITS;
 
       // Construct the FastClock specifying how frequently it will be updated.
-      FastClock(uint16_t updateRateHz);
+      FastClock(uint16_t tickRateHz);
 
       /* ----------------------------------------------- */
       /* Callable from main code with interrupts enabled */
       /* ----------------------------------------------- */
 
-      uint32_t microsToRate(uint32_t micros);
+      // **SLOW** (32-bit multiply)
+      static uint16_t calculateMicrosPerTick(uint16_t tickRateHz);
 
-      /* ------------------------------------------------ */
-      /* Callable from main code with interrupts disabled */
-      /* ------------------------------------------------ */
+      uint16_t getMicrosPerTick() const;
+
+      // **SLOW** (32-bit divide)
+      uint32_t microsToRate(uint32_t micros) const;
+
+      /* ---------------------------------------------------------------- */
+      /* Callable during timer interrupt, or when interrupts are disabled */
+      /* ---------------------------------------------------------------- */
 
       uint32_t getRate() const;
       void     setRate(uint32_t rate);
@@ -462,7 +468,7 @@ namespace JNTUB {
       bool     isRising() const;
       bool     isFalling() const;
 
-      void update();
+      void     tick();
   };
 
 }  //JNTUB
