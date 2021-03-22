@@ -2,18 +2,21 @@
 
 ## Firmware To-Do
 
+### ENV
+- [x] Initial implementation
+- [x] Refactor to use `FastClock`
+- [ ] Make retrig optional
+- [ ] Use 10-bit PWM?
+
 ### LFO
 - [x] Initial implementation
 - [x] 10-bit PWM
 - [ ] Automatic clock detection
 - [ ] Allow control of amplitude
 
-### ENV
-- [x] Initial implementation
-- [ ] Make retrig optional
-
 ### VCO
 - [x] Initial implementation
+- [ ] Adjust SUB/DTN knob response to reflect panel graphics
 - [ ] Investigate waveform glitches
 - [ ] Ensure audio-rate sync works
 - [ ] Experiment with 10-bit audio?
